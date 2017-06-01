@@ -6,11 +6,13 @@ Implement "Abstractive Text Summarization using Sequence-to-sequence RNNS and Be
 """
 from __future__ import unicode_literals
 
+import os
 import tensorflow as tf
 from transwarpnlp.textsum.textsum_config import Config
 from transwarpnlp.textsum import data, batch_reader
 from transwarpnlp.textsum import seq2seq_attention_model, seq2seq_attention_decode
-from transwarpnlp.textsum.train.train_seq2seq_textsum import _RunningAvgLoss
+
+pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 textsum_config = Config()
 
@@ -44,10 +46,19 @@ def test_textsum(vocab_path, data_path, decode_dir, log_root):
                                    truncate_input=textsum_config.truncate_input)
     tf.set_random_seed(textsum_config.random_seed)
 
+    # decode_mdl_hps = hps
     # Only need to restore the 1st step and reuse it since
     # we keep and feed in state for each step's output.
     decode_mdl_hps = hps._replace(dec_timesteps=1)
     model = seq2seq_attention_model.Seq2SeqAttentionModel(
         decode_mdl_hps, vocab)
+
     decoder = seq2seq_attention_decode.BSDecoder(model, batcher, hps, vocab, decode_dir, log_root)
     decoder.DecodeLoop()
+
+if __name__ == "__main__":
+    vocab_path = os.path.join(pkg_path, "data/textsum/data/vocab.txt")
+    data_path = os.path.join(pkg_path, "data/textsum/data/test.txt")
+    test_dir = os.path.join(pkg_path, "data/textsum/test/")
+    log_root = os.path.join(pkg_path, "data/textsum/ckpt/")
+    test_textsum(vocab_path, data_path, test_dir, log_root)

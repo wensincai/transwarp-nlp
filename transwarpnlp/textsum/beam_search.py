@@ -19,11 +19,9 @@ each of the previous K result, getting K*K results. Pick the top K results from
 K*K results, and start over again until certain number of results are fully
 decoded.
 """
+from transwarpnlp.textsum.textsum_config import Config
 
-import tensorflow as tf
-
-FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_bool('normalize_by_length', True, 'Whether to normalize')
+textsum_config = Config()
 
 class Hypothesis(object):
   """Defines a hypothesis during beam search."""
@@ -141,7 +139,7 @@ class BeamSearch(object):
       hyps: A list of sorted hypothesis in reverse log_prob order.
     """
     # This length normalization is only effective for the final results.
-    if FLAGS.normalize_by_length:
+    if textsum_config.normalize_by_length:
       return sorted(hyps, key=lambda h: h.log_prob/len(h.tokens), reverse=True)
     else:
       return sorted(hyps, key=lambda h: h.log_prob, reverse=True)

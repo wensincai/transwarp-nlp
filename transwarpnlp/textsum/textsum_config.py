@@ -15,3 +15,4 @@ class Config(object):
     random_seed = 111
     max_decode_steps = 100000
     decode_batches_per_ckpt = 8000
+    normalize_by_length = True

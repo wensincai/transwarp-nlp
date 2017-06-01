@@ -3,6 +3,7 @@ import time
 
 import beam_search
 import data
+import codecs
 from transwarpnlp.textsum.textsum_config import Config
 from six.moves import xrange
 import tensorflow as tf
@@ -43,10 +44,10 @@ class DecodeIO(object):
     if self._ref_file: self._ref_file.close()
     if self._decode_file: self._decode_file.close()
     timestamp = int(time.time())
-    self._ref_file = open(
-        os.path.join(self._outdir, 'ref%d'%timestamp), 'w')
-    self._decode_file = open(
-        os.path.join(self._outdir, 'decode%d'%timestamp), 'w')
+    self._ref_file = codecs.open(
+        os.path.join(self._outdir, 'ref%d'%timestamp), 'w', 'utf-8')
+    self._decode_file = codecs.open(
+        os.path.join(self._outdir, 'decode%d'%timestamp), 'w', 'utf-8')
 
 class BSDecoder(object):
   """Beam search decoder."""
@@ -99,7 +100,7 @@ class BSDecoder(object):
     self._decode_io.ResetFiles()
     for _ in xrange(textsum_config.decode_batches_per_ckpt):
       (article_batch, _, _, article_lens, _, _, origin_articles,
-       origin_abstracts) = self._batch_reader.NextBatch()
+       origin_abstracts) = self._batch_reader.getNextBatch()
       for i in xrange(self._hps.batch_size):
         bs = beam_search.BeamSearch(
             self._model, self._hps.batch_size,
@@ -128,7 +129,11 @@ class BSDecoder(object):
     end_p = decoded_output.find(data.SENTENCE_END, 0)
     if end_p != -1:
       decoded_output = decoded_output[:end_p]
-    tf.logging.info('article:  %s', article)
-    tf.logging.info('abstract: %s', abstract)
-    tf.logging.info('decoded:  %s', decoded_output)
+    #tf.logging.info('article:  %s', article)
+    print("article: " + article)
+    #tf.logging.info('abstract: %s', abstract)
+    print("abstract: " + abstract)
+    #tf.logging.info('decoded:  %s', decoded_output)
+    print("decoded: " + decoded_output)
+    print("\n")
     self._decode_io.Write(abstract, decoded_output.strip())

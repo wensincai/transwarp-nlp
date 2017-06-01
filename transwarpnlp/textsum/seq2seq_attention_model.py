@@ -115,11 +115,11 @@ class Seq2SeqAttentionModel(object):
           cell_fw = tf.contrib.rnn.LSTMCell(
               hps.num_hidden,
               initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=123),
-              state_is_tuple=True)
+              state_is_tuple=False)
           cell_bw = tf.contrib.rnn.LSTMCell(
               hps.num_hidden,
               initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=113),
-              state_is_tuple=True)
+              state_is_tuple=False)
           (emb_encoder_inputs, fw_state, _) = tf.contrib.rnn.static_bidirectional_rnn(
               cell_fw, cell_bw, emb_encoder_inputs, dtype=tf.float32,
               sequence_length=article_lens)
@@ -147,12 +147,13 @@ class Seq2SeqAttentionModel(object):
         cell = tf.contrib.rnn.LSTMCell(
             hps.num_hidden,
             initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=113),
-            state_is_tuple=True)
+            state_is_tuple=False)
 
         encoder_outputs = [tf.reshape(x, [hps.batch_size, 1, 2*hps.num_hidden])
                            for x in encoder_outputs]
         self._enc_top_states = tf.concat(axis=1, values=encoder_outputs)
         self._dec_in_state = fw_state
+
         # During decoding, follow up _dec_in_state are fed from beam_search.
         # dec_out_state are stored by beam_search for next step feeding.
         initial_state_attention = (hps.mode == 'decode')
@@ -171,6 +172,7 @@ class Seq2SeqAttentionModel(object):
               tf.nn.xw_plus_b(decoder_outputs[i], w, v))
 
       if hps.mode == 'decode':
+        print('decode_output')
         with tf.variable_scope('decode_output'):
           best_outputs = [tf.argmax(x, 1) for x in model_outputs]
           tf.logging.info('best_outputs%s', best_outputs[0].get_shape())
