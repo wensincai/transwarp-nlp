@@ -13,3 +13,5 @@ class Config(object):
     truncate_input = False
     num_gpus = 0
     random_seed = 111
+    max_decode_steps = 100000
+    decode_batches_per_ckpt = 8000

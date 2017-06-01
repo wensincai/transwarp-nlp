@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 # Copyright 2016 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +16,9 @@
 # ==============================================================================
 
 """Data batchers for data described in ..//data_prep/README.md."""
-
+from __future__ import unicode_literals
 import sys, os
+import codecs
 import re
 from tensorflow.python.platform import gfile
 
@@ -46,7 +49,7 @@ class Vocab(object):
         self._id_to_word = {}
         self._count = 0
 
-        with open(vocab_file, 'r') as vocab_f:
+        with codecs.open(vocab_file, 'r', 'utf-8') as vocab_f:
             for line in vocab_f:
                 pieces = line.split()
                 if pieces[0] in self._word_to_id:
@@ -126,7 +129,7 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
       f.close()
 
 def getArticlesAndAbstracts(data_path):
-    with open(data_path, 'r') as line_f:
+    with codecs.open(data_path, 'r', encoding='utf-8') as line_f:
         for line in line_f:
             if line != '\n':
                 contents = line.split("|")
@@ -172,6 +175,17 @@ def GetWordIds(text, vocab, pad_len=None, pad_id=None):
     if pad_len is not None:
         return Pad(ids, pad_id, pad_len)
     return ids
+
+def Ids2Words(ids_list, vocab):
+  """Get words from ids.
+  Args:
+    ids_list: list of int32
+    vocab: TextVocabulary object
+  Returns:
+    List of words corresponding to ids.
+  """
+  assert isinstance(ids_list, list), '%s  is not a list' % ids_list
+  return [vocab.IdToWord(i) for i in ids_list]
 
 if __name__ == "__main__":
     vocab_file = os.path.join(pkg_path, "data/textsum/data/vocab.txt")

@@ -1,9 +1,10 @@
+# -*- coding:utf-8 -*-
+
 """Trains a seq2seq model.
 WORK IN PROGRESS.
 Implement "Abstractive Text Summarization using Sequence-to-sequence RNNS and
 Beyond."
 """
-import sys
 import os
 
 import tensorflow as tf
@@ -11,8 +12,7 @@ from transwarpnlp.textsum import seq2seq_attention_model
 from transwarpnlp.textsum.textsum_config import Config
 from transwarpnlp.textsum import data, batch_reader
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pkg_path)
+pkg_path = os.path.dirname(os.getcwd())
 
 textsum_config = Config()
 
@@ -110,6 +110,6 @@ def train_textsum(vocab_path, data_path, train_dir, log_root):
 if __name__ == "__main__":
     vocab_path = os.path.join(pkg_path, "data/textsum/data/vocab.txt")
     data_path = os.path.join(pkg_path, "data/textsum/data/train.txt")
-    train_dir = os.path.join(pkg_path, "data/textsum/model/")
+    train_dir = os.path.join(pkg_path, "data/textsum/train/")
     log_root = os.path.join(pkg_path, "data/textsum/ckpt/")
     train_textsum(vocab_path, data_path, train_dir, log_root)
