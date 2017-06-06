@@ -2,9 +2,10 @@ import os
 import time
 
 import beam_search
-import data
+import numpy as np
 import codecs
 from transwarpnlp.textsum.textsum_config import Config
+from transwarpnlp.textsum.dataset import data
 from six.moves import xrange
 import tensorflow as tf
 
@@ -52,7 +53,7 @@ class DecodeIO(object):
 class BSDecoder(object):
   """Beam search decoder."""
 
-  def __init__(self, model, batch_reader, hps, vocab, decode_dir, log_root):
+  def __init__(self, model, dataset, hps, vocab, decode_dir, log_root):
       """Beam search decoding.
       Args:
         model: The seq2seq attentional model.
@@ -62,7 +63,7 @@ class BSDecoder(object):
       """
       self._model = model
       self._model.build_graph()
-      self._batch_reader = batch_reader
+      self._dataset = dataset
       self._hps = hps
       self._vocab = vocab
       self._saver = tf.train.Saver()
@@ -99,8 +100,9 @@ class BSDecoder(object):
 
     self._decode_io.ResetFiles()
     for _ in xrange(textsum_config.decode_batches_per_ckpt):
-      (article_batch, _, _, article_lens, _, _, origin_articles,
-       origin_abstracts) = self._batch_reader.getNextBatch()
+      article_lens = np.full(self._hps.batch_size, fill_value=self._hps.enc_timesteps, dtype=np.int32)
+
+      article_batch, _, _, origin_articles, origin_abstracts = self._dataset.next_batch(self._hps.batch_size)
       for i in xrange(self._hps.batch_size):
         bs = beam_search.BeamSearch(
             self._model, self._hps.batch_size,
@@ -115,10 +117,10 @@ class BSDecoder(object):
         best_beam = bs.BeamSearch(sess, article_batch_cp, article_lens_cp)[0]
         decode_output = [int(t) for t in best_beam.tokens[1:]]
         self._DecodeBatch(
-            origin_articles[i], origin_abstracts[i], decode_output)
+            origin_articles[i], origin_abstracts[i], decode_output, i)
     return True
 
-  def _DecodeBatch(self, article, abstract, output_ids):
+  def _DecodeBatch(self, article, abstract, output_ids, i):
     """Convert id to words and writing results.
     Args:
       article: The original article string.
@@ -130,10 +132,10 @@ class BSDecoder(object):
     if end_p != -1:
       decoded_output = decoded_output[:end_p]
     #tf.logging.info('article:  %s', article)
-    print("article: " + article)
+    print("article: " + str(i) + article)
     #tf.logging.info('abstract: %s', abstract)
-    print("abstract: " + abstract)
+    print("abstract: " + str(i) + abstract)
     #tf.logging.info('decoded:  %s', decoded_output)
-    print("decoded: " + decoded_output)
+    print("decoded: " + str(i) + decoded_output)
     print("\n")
     self._decode_io.Write(abstract, decoded_output.strip())

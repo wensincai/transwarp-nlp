@@ -63,7 +63,7 @@ def _Train(model, dataset, hps, train_dir, log_root):
       abstract_lens = np.full(hps.batch_size, fill_value = hps.dec_timesteps ,dtype=np.int32)
 
 
-      article_batch, abstract_batch, targets = dataset.next_batch(hps.batch_size)
+      article_batch, abstract_batch, targets, _, _ = dataset.next_batch(hps.batch_size)
 
       _, summaries, loss, train_step =\
           model.run_train_step(sess, article_batch, abstract_batch,

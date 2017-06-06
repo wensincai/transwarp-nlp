@@ -14,5 +14,5 @@ class Config(object):
     num_gpus = 0
     random_seed = 111
     max_decode_steps = 100000
-    decode_batches_per_ckpt = 8000
+    decode_batches_per_ckpt = 4
     normalize_by_length = True

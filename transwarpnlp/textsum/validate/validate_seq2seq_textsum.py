@@ -9,7 +9,8 @@ from __future__ import unicode_literals
 import os
 import time
 import tensorflow as tf
-from transwarpnlp.textsum import data, batch_reader
+import numpy as np
+from transwarpnlp.textsum.dataset import data, textsum
 from transwarpnlp.textsum.textsum_config import Config
 from transwarpnlp.textsum import seq2seq_attention_model
 from transwarpnlp.textsum.train.train_seq2seq_textsum import _RunningAvgLoss
@@ -18,7 +19,7 @@ pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 textsum_config = Config()
 
-def _Eval(model, data_batcher, eval_dir, log_root, vocab=None):
+def _Eval(model, dataset, hps, eval_dir, log_root, vocab=None):
     """Runs model eval."""
     model.build_graph()
     saver = tf.train.Saver()
@@ -41,8 +42,12 @@ def _Eval(model, data_batcher, eval_dir, log_root, vocab=None):
         tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
         saver.restore(sess, ckpt_state.model_checkpoint_path)
 
-        (article_batch, abstract_batch, targets, article_lens, abstract_lens,
-         loss_weights, _, _) = data_batcher.getNextBatch()
+        loss_weights = np.ones((hps.batch_size, hps.dec_timesteps), dtype=np.float32)
+        article_lens = np.full(hps.batch_size, fill_value=hps.enc_timesteps, dtype=np.int32)
+        abstract_lens = np.full(hps.batch_size, fill_value=hps.dec_timesteps, dtype=np.int32)
+
+        article_batch, abstract_batch, targets, _, _ = dataset.next_batch(hps.batch_size)
+
         (summaries, loss, train_step) = model.run_eval_step(
             sess, article_batch, abstract_batch, targets, article_lens,
             abstract_lens, loss_weights)
@@ -87,15 +92,13 @@ def valid_textsum(vocab_path, data_path, eval_dir, log_root):
         max_grad_norm=2,
         num_softmax_samples=0)  # If 0, no sampled softmax.
 
-    batcher = batch_reader.Batcher(data_path, vocab, hps, textsum_config.article_key,
-                                   textsum_config.abstract_key, textsum_config.max_article_sentences,
-                                   textsum_config.max_abstract_sentences, bucketing=textsum_config.use_bucketing,
-                                   truncate_input=textsum_config.truncate_input)
+    dataset = textsum.read_data_sets(data_path, vocab, hps)
+
     tf.set_random_seed(textsum_config.random_seed)
 
     model = seq2seq_attention_model.Seq2SeqAttentionModel(
         hps, vocab)
-    _Eval(model, batcher, eval_dir, log_root, vocab=vocab)
+    _Eval(model, dataset, hps, eval_dir, log_root, vocab=vocab)
 
 if __name__ == "__main__":
     vocab_path = os.path.join(pkg_path, "data/textsum/data/vocab.txt")
