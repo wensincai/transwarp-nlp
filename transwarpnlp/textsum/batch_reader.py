@@ -9,7 +9,7 @@ import numpy as np
 import random
 import tensorflow as tf
 
-import data
+from dataset import data
 
 ModelInput = namedtuple('ModelInput',
                         'enc_input dec_input target enc_len dec_len '

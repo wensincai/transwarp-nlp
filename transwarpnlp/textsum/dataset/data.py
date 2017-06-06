@@ -129,11 +129,13 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
       f.close()
 
 def getArticlesAndAbstracts(data_path):
+    articleAndAbstracts = []
     with codecs.open(data_path, 'r', encoding='utf-8') as line_f:
         for line in line_f:
             if line != '\n':
                 contents = line.split("|")
-                yield contents[0], contents[1]
+                articleAndAbstracts.append((contents[0], contents[1]))
+    return articleAndAbstracts
 
 def Pad(ids, pad_id, length):
     """Pad or trim list to len length.

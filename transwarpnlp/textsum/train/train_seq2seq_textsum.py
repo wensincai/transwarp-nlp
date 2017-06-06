@@ -6,11 +6,12 @@ Implement "Abstractive Text Summarization using Sequence-to-sequence RNNS and
 Beyond."
 """
 import os
+import numpy as np
 
 import tensorflow as tf
 from transwarpnlp.textsum import seq2seq_attention_model
 from transwarpnlp.textsum.textsum_config import Config
-from transwarpnlp.textsum import data, batch_reader
+from transwarpnlp.textsum.dataset import data, textsum
 
 pkg_path = os.path.dirname(os.getcwd())
 
@@ -29,7 +30,7 @@ def _RunningAvgLoss(loss, running_avg_loss, summary_writer, step, decay=0.999):
   print('running_avg_loss: %f\n' % running_avg_loss)
   return running_avg_loss
 
-def _Train(model, data_batcher, train_dir, log_root):
+def _Train(model, dataset, hps, train_dir, log_root):
   """Runs model training."""
   with tf.device('/cpu:0'):
 
@@ -57,11 +58,16 @@ def _Train(model, data_batcher, train_dir, log_root):
     while not sv.should_stop() and step < textsum_config.max_run_steps:
       print("step %d" % step)
 
-      article_batch, abstract_batch, targets, article_lens, abstract_lens,loss_weights, _, _=\
-          data_batcher.getNextBatch()
+      loss_weights = np.ones((hps.batch_size, hps.dec_timesteps), dtype=np.float32)
+      article_lens = np.full(hps.batch_size, fill_value = hps.enc_timesteps ,dtype=np.int32)
+      abstract_lens = np.full(hps.batch_size, fill_value = hps.dec_timesteps ,dtype=np.int32)
+
+
+      article_batch, abstract_batch, targets = dataset.next_batch(hps.batch_size)
 
       _, summaries, loss, train_step =\
-          model.run_train_step(sess, article_batch, abstract_batch, targets, article_lens, abstract_lens, loss_weights)
+          model.run_train_step(sess, article_batch, abstract_batch,
+                               targets, article_lens, abstract_lens, loss_weights)
 
       summary_writer.add_summary(summaries, train_step)
       running_avg_loss = _RunningAvgLoss(running_avg_loss, loss, summary_writer, train_step)
@@ -96,15 +102,17 @@ def train_textsum(vocab_path, data_path, train_dir, log_root):
         max_grad_norm=2,
         num_softmax_samples=0)  # If 0, no sampled softmax.
 
-    batcher = batch_reader.Batcher(data_path, vocab, hps, textsum_config.article_key,
-        textsum_config.abstract_key, textsum_config.max_article_sentences,
-        textsum_config.max_abstract_sentences, bucketing=textsum_config.use_bucketing,
-        truncate_input=textsum_config.truncate_input)
+    # batcher = batch_reader.Batcher(data_path, vocab, hps, textsum_config.article_key,
+    #     textsum_config.abstract_key, textsum_config.max_article_sentences,
+    #     textsum_config.max_abstract_sentences, bucketing=textsum_config.use_bucketing,
+    #     truncate_input=textsum_config.truncate_input)
+
+    dataset = textsum.read_data_sets(data_path, vocab, hps)
     tf.set_random_seed(textsum_config.random_seed)
 
     model = seq2seq_attention_model.Seq2SeqAttentionModel(
         hps, vocab)
-    _Train(model, batcher, train_dir, log_root)
+    _Train(model, dataset, hps, train_dir, log_root)
 
 
 if __name__ == "__main__":
