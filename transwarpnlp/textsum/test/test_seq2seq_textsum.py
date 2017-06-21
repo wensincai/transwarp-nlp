@@ -40,10 +40,6 @@ def test_textsum(vocab_path, data_path, decode_dir, log_root):
         max_grad_norm=2,
         num_softmax_samples=0)  # If 0, no sampled softmax.
 
-    # batcher = batch_reader.Batcher(data_path, vocab, hps, textsum_config.article_key,
-    #                                textsum_config.abstract_key, textsum_config.max_article_sentences,
-    #                                textsum_config.max_abstract_sentences, bucketing=textsum_config.use_bucketing,
-    #                                truncate_input=textsum_config.truncate_input)
     dataset = textsum.read_data_sets(data_path, vocab, hps)
     tf.set_random_seed(textsum_config.random_seed)
 

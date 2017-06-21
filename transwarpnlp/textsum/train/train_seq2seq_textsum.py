@@ -54,27 +54,28 @@ def _Train(model, dataset, hps, train_dir, log_root):
         allow_soft_placement=True))
 
     running_avg_loss = 0
-    step = 0
-    while not sv.should_stop() and step < textsum_config.max_run_steps:
-      print("step %d" % step)
+    epoch = 0
+    while not sv.should_stop() and epoch < textsum_config.epoch:
+      print("epoch %d start" % epoch)
 
-      loss_weights = np.ones((hps.batch_size, hps.dec_timesteps), dtype=np.float32)
-      article_lens = np.full(hps.batch_size, fill_value = hps.enc_timesteps ,dtype=np.int32)
-      abstract_lens = np.full(hps.batch_size, fill_value = hps.dec_timesteps ,dtype=np.int32)
+      while dataset.hasNext():
+          loss_weights = np.ones((hps.batch_size, hps.dec_timesteps), dtype=np.float32)
+          article_lens = np.full(hps.batch_size, fill_value = hps.enc_timesteps ,dtype=np.int32)
+          abstract_lens = np.full(hps.batch_size, fill_value = hps.dec_timesteps ,dtype=np.int32)
 
+          article_batch, abstract_batch, targets, _, _ = dataset.next_batch(hps.batch_size)
 
-      article_batch, abstract_batch, targets, _, _ = dataset.next_batch(hps.batch_size)
+          _, summaries, loss, train_step =\
+              model.run_train_step(sess, article_batch, abstract_batch,
+                                   targets, article_lens, abstract_lens, loss_weights)
 
-      _, summaries, loss, train_step =\
-          model.run_train_step(sess, article_batch, abstract_batch,
-                               targets, article_lens, abstract_lens, loss_weights)
+          summary_writer.add_summary(summaries, train_step)
+          running_avg_loss = _RunningAvgLoss(running_avg_loss, loss, summary_writer, train_step)
 
-      summary_writer.add_summary(summaries, train_step)
-      running_avg_loss = _RunningAvgLoss(running_avg_loss, loss, summary_writer, train_step)
-
-      step += 1
-      if step % 100 == 0:
-        summary_writer.flush()
+      summary_writer.flush()
+      dataset.reset()
+      epoch = epoch + 1
+      print("epoch %d end" % epoch)
     sv.stop()
     return running_avg_loss
 
@@ -101,11 +102,6 @@ def train_textsum(vocab_path, data_path, train_dir, log_root):
         emb_dim=128,  # If 0, don't use embedding
         max_grad_norm=2,
         num_softmax_samples=0)  # If 0, no sampled softmax.
-
-    # batcher = batch_reader.Batcher(data_path, vocab, hps, textsum_config.article_key,
-    #     textsum_config.abstract_key, textsum_config.max_article_sentences,
-    #     textsum_config.max_abstract_sentences, bucketing=textsum_config.use_bucketing,
-    #     truncate_input=textsum_config.truncate_input)
 
     dataset = textsum.read_data_sets(data_path, vocab, hps)
     tf.set_random_seed(textsum_config.random_seed)
