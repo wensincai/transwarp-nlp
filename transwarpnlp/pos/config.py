@@ -10,7 +10,7 @@ class LargeConfig(object):
   num_steps = 30
   hidden_size = 128
   max_epoch = 5
-  max_max_epoch = 10
+  epoch = 1
   keep_prob = 1.0
   lr_decay = 1 / 1.15
   batch_size = 10        # single sample batch

@@ -14,7 +14,7 @@ import glob
 from pos import pos_model as pos_model
 from pos import pos_model_bilstm
 from pos.config import LargeConfig
-from pos import reader as pos_reader
+from pos.dataset import rawdata, dataset
 
 class ModelLoader(object):
     
@@ -65,13 +65,23 @@ class ModelLoader(object):
         Define prediction function of POS Tagging
         return tuples [(word, tag)]
         '''
-        word_data = pos_reader.sentence_to_word_ids(data_path, words)
-        tag_data = [0]*len(word_data)
+        word_data = rawdata.sentence_to_word_ids(data_path, words)
+        #tag_data = [0]*len(word_data)
         state = session.run(model.initial_state)
+
+        word_arr = np.zeros((len(word_data), model.num_steps), np.int32)
+        tag_arr = np.zeros((len(word_data), model.num_steps), np.int32)
+
+        for i, word in enumerate(word_data):
+            word_arr[i] = word
+
+        dat = dataset.Dataset(word_arr, tag_arr)
         
         predict_id =[]
-        for step, (x, y) in enumerate(pos_reader.iterator(word_data, tag_data, model.batch_size, model.num_steps)):
-            #print ("Current Step" + str(step))
+        step = 0
+        while dat.hasNext():
+            step = step + 1
+            x,y = dat.nextBatch(model.batch_size)
             fetches = [model.cost, model.final_state, model.logits]
             feed_dict = {}
             feed_dict[model.input_data] = x
@@ -83,7 +93,7 @@ class ModelLoader(object):
             _, _, logits  = session.run(fetches, feed_dict)
             predict_id.append(int(np.argmax(logits)))    
             #print (logits)
-        predict_tag = pos_reader.word_ids_to_sentence(data_path, predict_id)
+        predict_tag = rawdata.word_ids_to_sentence(data_path, predict_id)
         return zip(words, predict_tag)
     
 def load_model(root_path, method="lstm"):

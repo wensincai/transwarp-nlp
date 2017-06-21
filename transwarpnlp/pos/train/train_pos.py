@@ -1,18 +1,17 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import unicode_literals
-import sys,os
+import os
 
 import tensorflow as tf
 
-from transwarpnlp.pos import reader
+from pos.dataset import rawdata, dataset
 from transwarpnlp.pos import pos_model
 from transwarpnlp.pos import pos_model_bilstm
 
 from transwarpnlp.pos.config import LargeConfig
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pkg_path)
+pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 train_dir = os.path.join(pkg_path, "data", "pos", "ckpt")
 
 flags = tf.flags
@@ -22,13 +21,17 @@ flags.DEFINE_string("pos_scope_name", "pos_var_scope", "Variable scope of pos Mo
 FLAGS = flags.FLAGS
 
 def train_lstm(data_path):
-    raw_data = reader.load_data(data_path)
-    # train_data, valid_data, test_data, _ = raw_data
-    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocab_size = raw_data
     config = LargeConfig()
     eval_config = LargeConfig()
     eval_config.batch_size = 1
-    eval_config.num_steps = 1
+
+    raw_data = rawdata.load_data(data_path, config.num_steps)
+    # train_data, valid_data, test_data, _ = raw_data
+    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, _ = raw_data
+
+    train_dataset = dataset.Dataset(train_word, train_tag)
+    valid_dataset = dataset.Dataset(dev_word, dev_tag)
+    test_dataset = dataset.Dataset(test_word, test_tag)
 
     with tf.Graph().as_default(), tf.Session() as sess:
         initializer = tf.random_normal_initializer(-config.init_scale, config.init_scale)
@@ -47,27 +50,34 @@ def train_lstm(data_path):
             print("Created model with fresh parameters.")
             sess.run(tf.global_variables_initializer())
 
-        for i in range(config.max_max_epoch):
+        for i in range(config.epoch):
             lr_decay = config.lr_decay ** max(float(i - config.max_epoch), 0.0)
             m.assign_lr(sess, config.learning_rate * lr_decay)
             print("Epoch: %d Learning rate: %.3f" % (i + 1, sess.run(m.lr)))
 
-            train_perplexity = pos_model.run_epoch(sess, m, train_word, train_tag, m.train_op, pos_train_dir=FLAGS.pos_train_dir, verbose=True)
+            train_perplexity = pos_model.run(sess, m, train_dataset, m.train_op, pos_train_dir=FLAGS.pos_train_dir, verbose=True)
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
 
-            valid_perplexity = pos_model.run_epoch(sess, valid_m, dev_word, dev_tag, tf.no_op(), pos_train_dir=FLAGS.pos_train_dir)
+            valid_perplexity = pos_model.run(sess, valid_m, valid_dataset, tf.no_op(), pos_train_dir=FLAGS.pos_train_dir)
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
 
-        test_perplexity = pos_model.run_epoch(sess, test_m, test_word, test_tag, tf.no_op(), pos_train_dir=FLAGS.pos_train_dir)
+            train_dataset.reset()
+            valid_dataset.reset()
+
+        test_perplexity = pos_model.run(sess, test_m, test_dataset, tf.no_op(), pos_train_dir=FLAGS.pos_train_dir)
         print("Test Perplexity: %.3f" % test_perplexity)
 
 def train_bilstm(data_path):
-    raw_data = reader.load_data(data_path)
-    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
-    config = LargeConfig
-    eval_config = LargeConfig
+    config = LargeConfig()
+    eval_config = LargeConfig()
     eval_config.batch_size = 1
-    eval_config.num_steps = 1
+
+    raw_data = rawdata.load_data(data_path, config.num_steps)
+    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
+
+    train_dataset = dataset.Dataset(train_word, train_tag)
+    valid_dataset = dataset.Dataset(dev_word, dev_tag)
+    test_dataset = dataset.Dataset(test_word, test_tag)
 
     with tf.Graph().as_default(), tf.Session() as sess:
         initializer = tf.random_normal_initializer(-config.init_scale, config.init_scale)
@@ -86,23 +96,26 @@ def train_bilstm(data_path):
             print("Created model with fresh parameters.")
             sess.run(tf.global_variables_initializer())
 
-        for i in range(config.max_max_epoch):
+        for i in range(config.epoch):
             lr_decay = config.lr_decay ** max(float(i - config.max_epoch), 0.0)
             m.assign_lr(sess, config.learning_rate * lr_decay)
 
             print("Epoch: %d Learning rate: %.3f" % (i + 1, sess.run(m.lr)))
-            train_perplexity = pos_model_bilstm.run_epoch(sess, m, train_word, train_tag, m.train_op,
+            train_perplexity = pos_model_bilstm.run(sess, m, train_dataset, m.train_op,
                                          verbose=True, pos_train_dir=FLAGS.pos_train_dir)
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
-            valid_perplexity = pos_model_bilstm.run_epoch(sess, valid_m, dev_word, dev_tag, tf.no_op(),
+            valid_perplexity = pos_model_bilstm.run(sess, valid_m, valid_dataset, tf.no_op(),
                                                           pos_train_dir=FLAGS.pos_train_dir)
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
 
-        test_perplexity = pos_model_bilstm.run_epoch(sess, test_m, test_word, test_tag, tf.no_op(),
+            train_dataset.reset()
+            valid_dataset.reset()
+
+        test_perplexity = pos_model_bilstm.run(sess, test_m, test_dataset, tf.no_op(),
                                                      pos_train_dir=FLAGS.pos_train_dir)
         print("Test Perplexity: %.3f" % test_perplexity)
 
 if __name__ == "__main__":
     data_path = os.path.join(pkg_path, "data/pos/data")
-    train_lstm(data_path)
-    #train_bilstm(data_path)
+    #train_lstm(data_path)
+    train_bilstm(data_path)

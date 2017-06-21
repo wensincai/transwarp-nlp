@@ -14,8 +14,6 @@ import numpy as np
 import tensorflow as tf
 import os
 
-from pos import reader
-
 def data_type():
   return tf.float32
 
@@ -129,16 +127,16 @@ def _bilstm_model(inputs, targets, config):
     cost = tf.reduce_sum(loss)/batch_size # loss [time_step]
     return cost, logits
 
-def run_epoch(session, model, word_data, tag_data, eval_op, pos_train_dir, verbose=False):
+def run(session, model, dataset, eval_op, pos_train_dir, verbose=False):
   """Runs the model on the given data."""
-  epoch_size = ((len(word_data) // model.batch_size) - 1) // model.num_steps
   
   start_time = time.time()
   costs = 0.0
   iters = 0
-  
-  for step, (x, y) in enumerate(reader.iterator(word_data, tag_data, model.batch_size,
-                                                    model.num_steps)):
+  step = 0
+  while dataset.hasNext():
+    step = step + 1
+    (x, y) = dataset.nextBatch(model.batch_size)
     fetches = [model.cost, model.logits, eval_op]  # eval_op define the m.train_op or m.eval_op
     feed_dict = {}
     feed_dict[model.input_data] = x
@@ -147,16 +145,15 @@ def run_epoch(session, model, word_data, tag_data, eval_op, pos_train_dir, verbo
     costs += cost
     iters += model.num_steps
     
-    if verbose and step % (epoch_size // 10) == 10:
+    if verbose and step % 200 == 0:
       print("%.3f perplexity: %.3f speed: %.0f wps" %
-            (step * 1.0 / epoch_size, np.exp(costs / iters),
+            (step, np.exp(costs / iters),
              iters * model.batch_size / (time.time() - start_time)))
     
-    # Save Model to CheckPoint when is_training is True
-    if model.is_training:
-      if step % (epoch_size // 10) == 10:
-        checkpoint_path = os.path.join(pos_train_dir, "bilstm" ,"bilstm.ckpt")
-        model.saver.save(session, checkpoint_path)
-        print("Model Saved... at time step " + str(step))
+  # Save Model to CheckPoint when is_training is True
+  if model.is_training:
+    checkpoint_path = os.path.join(pos_train_dir, "bilstm" ,"bilstm.ckpt")
+    model.saver.save(session, checkpoint_path)
+    print("Model Saved... at time step " + str(step))
   
   return np.exp(costs / iters)
