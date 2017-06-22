@@ -11,3 +11,4 @@ class CnnConfig(object):
     img_w = vector_size
     filter_w = img_w
     word_idx_map_szie = 75924  # 18766#75924
+    num_epoch = 10
