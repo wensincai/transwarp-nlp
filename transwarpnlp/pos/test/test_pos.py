@@ -9,7 +9,7 @@ import pos_tagger
 
 pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
-tagger = pos_tagger.load_model(pkg_path, 'lstm')
+tagger = pos_tagger.load_model(pkg_path, 'bilstm')
 
 #tagger = pos_tagger.load_model(pkg_path, 'bilstm')
 

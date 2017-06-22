@@ -66,8 +66,6 @@ class ModelLoader(object):
         return tuples [(word, tag)]
         '''
         word_data = rawdata.sentence_to_word_ids(data_path, words)
-        #tag_data = [0]*len(word_data)
-        state = session.run(model.initial_state)
 
         word_arr = np.zeros((len(word_data), model.num_steps), np.int32)
         tag_arr = np.zeros((len(word_data), model.num_steps), np.int32)
@@ -82,15 +80,12 @@ class ModelLoader(object):
         while dat.hasNext():
             step = step + 1
             x,y = dat.nextBatch(model.batch_size)
-            fetches = [model.cost, model.final_state, model.logits]
+            fetches = [model.cost, model.logits]
             feed_dict = {}
             feed_dict[model.input_data] = x
             feed_dict[model.targets] = y
-            for i, (c, h) in enumerate(model.initial_state):
-              feed_dict[c] = state[i].c
-              feed_dict[h] = state[i].h
-            
-            _, _, logits  = session.run(fetches, feed_dict)
+
+            _, logits  = session.run(fetches, feed_dict)
             predict_id.append(int(np.argmax(logits)))    
             #print (logits)
         predict_tag = rawdata.word_ids_to_sentence(data_path, predict_id)
