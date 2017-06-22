@@ -14,8 +14,6 @@ import numpy as np
 import tensorflow as tf
 import os
 
-from ner import reader
-
 def data_type():
   return tf.float32
 
@@ -122,36 +120,33 @@ class NERTagger(object):
     return self._train_op
 
 
-def run_epoch(session, model, word_data, tag_data, eval_op, ner_train_dir, verbose=False):
+def run(session, model, dataset, eval_op, ner_train_dir, verbose=False):
   """Runs the model on the given data."""
-  epoch_size = ((len(word_data) // model.batch_size) - 1) // model.num_steps
   start_time = time.time()
   costs = 0.0
   iters = 0
-  state = session.run(model.initial_state)
-  for step, (x, y) in enumerate(reader.iterator(word_data, tag_data, model.batch_size,
-                                                    model.num_steps)):
-    fetches = [model.cost, model.final_state, eval_op]
+  step = 0
+  while dataset.hasNext():
+    step = step + 1
+    (x, y) = dataset.nextBatch(model.batch_size)
+    fetches = [model.cost, eval_op]
     feed_dict = {}
     feed_dict[model.input_data] = x
     feed_dict[model.targets] = y
-    for i, (c, h) in enumerate(model.initial_state):
-      feed_dict[c] = state[i].c
-      feed_dict[h] = state[i].h
-    cost, state, _ = session.run(fetches, feed_dict)
+
+    cost, _ = session.run(fetches, feed_dict)
     costs += cost
     iters += model.num_steps
     
-    if verbose and step % (epoch_size // 10) == 10:
+    if verbose and step % 200 == 0:
       print("%.3f perplexity: %.3f speed: %.0f wps" %
-            (step * 1.0 / epoch_size, np.exp(costs / iters),
+            (step, np.exp(costs / iters),
              iters * model.batch_size / (time.time() - start_time)))
     
-    # Save Model to CheckPoint when is_training is True
-    if model.is_training:
-      if step % (epoch_size // 10) == 10:
-        checkpoint_path = os.path.join(ner_train_dir, "lstm", "lstm.ckpt")
-        model.saver.save(session, checkpoint_path)
-        print("Model Saved... at time step " + str(step))
+  # Save Model to CheckPoint when is_training is True
+  if model.is_training:
+    checkpoint_path = os.path.join(ner_train_dir, "lstm", "lstm.ckpt")
+    model.saver.save(session, checkpoint_path)
+    print("Model Saved... at time step " + str(step))
 
   return np.exp(costs / iters)

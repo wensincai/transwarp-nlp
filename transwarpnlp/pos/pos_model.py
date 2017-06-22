@@ -126,17 +126,14 @@ def run(session, model, dataset, eval_op, pos_train_dir, verbose=False):
   start_time = time.time()
   costs = 0.0
   iters = 0
-  state = session.run(model.initial_state)
   step = 0
   while dataset.hasNext():
     step = step + 1
     (x, y) = dataset.nextBatch(model.batch_size)
-    fetches = [model.cost, model.final_state, eval_op]
+    fetches = [model.cost, eval_op]
     feed_dict = {model.input_data: x, model.targets: y}
-    for i, (c, h) in enumerate(model.initial_state):
-      feed_dict[c] = state[i].c
-      feed_dict[h] = state[i].h
-    cost, state, _ = session.run(fetches, feed_dict)
+
+    cost, _ = session.run(fetches, feed_dict)
     costs += cost
     iters += model.num_steps
 

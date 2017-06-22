@@ -8,7 +8,7 @@ class LargeConfig(object):
   num_steps = 30
   hidden_size = 128
   max_epoch = 10
-  max_max_epoch = 15
+  epoch = 5
   keep_prob = 1.00    # remember to set to 1.00 when making new prediction
   lr_decay = 1 / 1.15
   batch_size = 10 # single sample batch

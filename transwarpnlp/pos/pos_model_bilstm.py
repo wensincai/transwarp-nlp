@@ -35,7 +35,7 @@ class POSTagger(object):
       embedding = tf.get_variable("embedding", [vocab_size, size], dtype=data_type())
       inputs = tf.nn.embedding_lookup(embedding, self._input_data)
     
-    self._cost, self._logits = _bilstm_model(inputs, self._targets, config)
+    self._cost, self._logits, self._accuracy = _bilstm_model(inputs, self._targets, config)
 
     # Gradients and SGD update operation for training the model.
     self._lr = tf.Variable(0.0, trainable=False)
@@ -90,8 +90,7 @@ def _bilstm_model(inputs, targets, config):
     num_steps = config.num_steps
     num_layers = config.num_layers
     size = config.hidden_size
-    vocab_size = config.vocab_size
-    target_num = config.target_num # target output number    
+    target_num = config.target_num # target output number
     
     lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
     lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
@@ -125,7 +124,7 @@ def _bilstm_model(inputs, targets, config):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels = tf.reshape(targets, [-1]), logits = logits)
     cost = tf.reduce_sum(loss)/batch_size # loss [time_step]
-    return cost, logits
+    return cost, logits, accuracy
 
 def run(session, model, dataset, eval_op, pos_train_dir, verbose=False):
   """Runs the model on the given data."""

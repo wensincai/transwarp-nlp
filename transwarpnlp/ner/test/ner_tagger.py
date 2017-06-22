@@ -11,8 +11,8 @@ import tensorflow as tf
 import numpy as np
 import glob
 
-from ner import ner_model as ner_model
-from ner import reader as ner_reader
+from ner import ner_model , ner_model_bilstm
+from ner.dataset import rawdata, dataset
 from ner.config import LargeConfig
 
 class ModelLoader(object):
@@ -43,7 +43,10 @@ class ModelLoader(object):
         config.num_steps = 1 # iterator one token per time
         
         with tf.variable_scope("ner_var_scope"):
-            model = ner_model.NERTagger(is_training=True, config=config) # save object after is_training
+            if self.method == "lstm":
+                model = ner_model.NERTagger(is_training=False, config=config)
+            else:
+                model = ner_model_bilstm.NERTagger(is_training=False, config=config)
         
         if len(glob.glob(ckpt_path + '.data*')) > 0: # file exist with pattern: 'ner.ckpt.data*'
             print("Loading model parameters from %s" % ckpt_path)
@@ -60,23 +63,28 @@ class ModelLoader(object):
         Define prediction function of ner Tagging
         return tuples (word, tag)
         '''
-        word_data = ner_reader.sentence_to_word_ids(data_path, words)
-        tag_data = [0]*len(word_data)
-        state = session.run(model.initial_state)
+        word_data = rawdata.sentence_to_word_ids(data_path, words)
+        word_arr = np.zeros((len(word_data), model.num_steps), np.int32)
+        tag_arr = np.zeros((len(word_data), model.num_steps), np.int32)
+
+        for i, word in enumerate(word_data):
+            word_arr[i] = word
+
+        dat = dataset.Dataset(word_arr, tag_arr)
         
         predict_id =[]
-        for step, (x, y) in enumerate(ner_reader.iterator(word_data, tag_data, model.batch_size, model.num_steps)):
-            fetches = [model.cost, model.final_state, model.logits]
+        step = 0
+        while dat.hasNext():
+            step = step + 1
+            x, y = dat.nextBatch(model.batch_size)
+            fetches = [model.cost, model.logits]
             feed_dict = {}
             feed_dict[model.input_data] = x
             feed_dict[model.targets] = y
-            for i, (c, h) in enumerate(model.initial_state):
-              feed_dict[c] = state[i].c
-              feed_dict[h] = state[i].h
             
-            _, _, logits  = session.run(fetches, feed_dict)
+            _, logits  = session.run(fetches, feed_dict)
             predict_id.append(int(np.argmax(logits)))    
-        predict_tag = ner_reader.word_ids_to_sentence(data_path, predict_id)
+        predict_tag = rawdata.word_ids_to_sentence(data_path, predict_id)
         return zip(words, predict_tag)
     
 def load_model(root_path, method="lstm"):

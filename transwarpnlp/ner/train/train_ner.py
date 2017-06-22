@@ -1,15 +1,15 @@
 # -*- coding:utf-8 -*-
 
 from __future__ import unicode_literals
-import sys,os
+import os
 
 import tensorflow as tf
 
-from transwarpnlp.ner import reader, ner_model, ner_model_bilstm
-from transwarpnlp.ner.config import LargeConfig
+from ner.dataset import dataset, rawdata
+from ner import ner_model, ner_model_bilstm
+from ner.config import LargeConfig
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pkg_path)
+pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 train_dir = os.path.join(pkg_path, "data", "ner", "ckpt")
 
 flags = tf.flags
@@ -22,14 +22,16 @@ def train_lstm(data_path):
     if not data_path:
         raise ValueError("No data files found in 'data_path' folder")
 
-    raw_data = reader.load_data(data_path)
-    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
-
     config = LargeConfig()
-
     eval_config = LargeConfig()
     eval_config.batch_size = 1
-    eval_config.num_steps = 1
+
+    raw_data = rawdata.load_data(data_path, config.num_steps)
+    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
+
+    train_dataset = dataset.Dataset(train_word, train_tag)
+    valid_dataset = dataset.Dataset(dev_word, dev_tag)
+    test_dataset = dataset.Dataset(test_word, test_tag)
 
     with tf.Graph().as_default(), tf.Session() as sess:
         initializer = tf.random_normal_initializer(-config.init_scale, config.init_scale)
@@ -48,21 +50,24 @@ def train_lstm(data_path):
             print("Created model with fresh parameters.")
             sess.run(tf.global_variables_initializer())
 
-        for i in range(config.max_max_epoch):
+        for i in range(config.epoch):
             lr_decay = config.lr_decay ** max(float(i - config.learning_rate), 0.0)
             m.assign_lr(sess, config.learning_rate * lr_decay)
             print("Epoch: %d Learning rate: %.3f" % (i + 1, sess.run(m.lr)))
 
-            train_perplexity = ner_model.run_epoch(sess, m, train_word, train_tag, m.train_op,
+            train_perplexity = ner_model.run(sess, m, train_dataset, m.train_op,
                                                    ner_train_dir=FLAGS.ner_train_dir, verbose=True)
 
             print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
 
-            valid_perplexity = ner_model.run_epoch(sess, valid_m, dev_word, dev_tag, tf.no_op(),
+            valid_perplexity = ner_model.run(sess, valid_m, valid_dataset, tf.no_op(),
                                                    ner_train_dir=FLAGS.ner_train_dir)
             print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
 
-        test_perplexity = ner_model.run_epoch(sess, test_m, test_word, test_tag, tf.no_op(),
+            train_dataset.reset()
+            valid_dataset.reset()
+
+        test_perplexity = ner_model.run(sess, test_m, test_dataset, tf.no_op(),
                                                 ner_train_dir=FLAGS.ner_train_dir)
         print("Test Perplexity: %.3f" % test_perplexity)
 
@@ -70,14 +75,16 @@ def train_bilstm(data_path):
     if not data_path:
         raise ValueError("No data files found in 'data_path' folder")
 
-    raw_data = reader.load_data(data_path)
-    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
-
     config = LargeConfig()
-
     eval_config = LargeConfig()
     eval_config.batch_size = 1
-    eval_config.num_steps = 1
+
+    raw_data = rawdata.load_data(data_path, config.num_steps)
+    train_word, train_tag, dev_word, dev_tag, test_word, test_tag, vocabulary = raw_data
+
+    train_dataset = dataset.Dataset(train_word, train_tag)
+    valid_dataset = dataset.Dataset(dev_word, dev_tag)
+    test_dataset = dataset.Dataset(test_word, test_tag)
 
     with tf.Graph().as_default(), tf.Session() as sess:
         initializer = tf.random_normal_initializer(-config.init_scale, config.init_scale)
@@ -96,22 +103,26 @@ def train_bilstm(data_path):
                 print("Created model with fresh parameters.")
                 sess.run(tf.global_variables_initializer())
 
-            for i in range(config.max_max_epoch):
+            for i in range(config.epoch):
                 lr_decay = config.lr_decay ** max(float(i - config.max_epoch), 0.0)
                 m.assign_lr(sess, config.learning_rate * lr_decay)
 
                 print("Epoch: %d Learning rate: %.3f" % (i + 1, sess.run(m.lr)))
-                train_perplexity = ner_model_bilstm.run_epoch(sess, m, train_word, train_tag, m.train_op,
+                train_perplexity = ner_model_bilstm.run(sess, m, train_dataset, m.train_op,
                                                               ner_train_dir=FLAGS.ner_train_dir, verbose=True)
                 print("Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
-                valid_perplexity = ner_model_bilstm.run_epoch(sess, valid_m, dev_word, dev_tag, tf.no_op(),
+                valid_perplexity = ner_model_bilstm.run(sess, valid_m, valid_dataset, tf.no_op(),
                                                               ner_train_dir=FLAGS.ner_train_dir)
                 print("Epoch: %d Valid Perplexity: %.3f" % (i + 1, valid_perplexity))
 
-            test_perplexity = ner_model_bilstm.run_epoch(sess, test_m, test_word, test_tag, tf.no_op(),
+                train_dataset.reset()
+                valid_dataset.reset()
+
+            test_perplexity = ner_model_bilstm.run(sess, test_m, test_dataset, tf.no_op(),
                                                          ner_train_dir=FLAGS.ner_train_dir)
             print("Test Perplexity: %.3f" % test_perplexity)
 
 if __name__ == "__main__":
     data_path = os.path.join(pkg_path, "data/ner/data")
-    train_lstm(data_path)
+    #train_lstm(data_path)
+    train_bilstm(data_path)
