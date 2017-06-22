@@ -31,11 +31,13 @@ NOT FINISHED
 
 参考文献：[A Neural Attention Model for Abstractive Sentence Summarization](https://arxiv.org/abs/1509.00685)
 
-### 6 情感分析
+### 6 英文情感分析
 - MEMORY NETWORK
 
 参考文献：[Aspect Level Sentiment Classification with Deep Memory Network](https://arxiv.org/abs/1605.08900),
 [Memory Network](https://arxiv.org/pdf/1410.3916.pdf)
+
+后续会基于中文语料进行情感分析。
 
 ### 7 依存句法分析
 NOT FINISHED
