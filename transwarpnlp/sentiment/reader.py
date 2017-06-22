@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 import os
 from collections import Counter
 import xml.etree.ElementTree as ET

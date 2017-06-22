@@ -1,13 +1,14 @@
+# -*- coding:utf-8 -*-
+
 import pprint
 import tensorflow as tf
 import numpy as np
-import os, sys
+import os
 
-from transwarpnlp.sentiment.reader import read_data
-from transwarpnlp.sentiment.model import MemN2N
+from sentiment.reader import read_data
+from sentiment.model import MemN2N
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(pkg_path)
+pkg_path = os.path.dirname(os.getcwd())
 train_dir = os.path.join(pkg_path, "data", "sentiment", "ckpt")
 
 pp = pprint.PrettyPrinter()
@@ -24,7 +25,6 @@ flags.DEFINE_float("init_hid", 0.1, "initial internal state value [0.1]")
 flags.DEFINE_float("init_std", 0.05, "weight initialization std [0.05]")
 flags.DEFINE_float("max_grad_norm", 50, "clip gradients to this norm [50]")
 
-
 FLAGS = flags.FLAGS
 
 def init_word_embeddings(word2idx, data_path):
@@ -37,7 +37,6 @@ def init_word_embeddings(word2idx, data_path):
       if content[0] in word2idx:
         wt[word2idx[content[0]]] = np.array(map(float, content[1:]))
   return wt
-
 
 def train_sentiment(data_path):
     source_count, target_count = [], []
@@ -63,7 +62,6 @@ def train_sentiment(data_path):
         model = MemN2N(FLAGS, sess)
         model.build_model()
         model.run(train_data, test_data)
-
 
 
 if __name__ == "__main__":

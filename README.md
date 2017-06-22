@@ -16,33 +16,42 @@
 参考文献：[Bidirectional LSTM-CRF Models for Sequence Tagging](https://arxiv.org/abs/1508.01991)
 
 ### 2 序列化标注
+
 - LSTM
 - BILSTM
 
 ### 3 中文命名实体识别
+
 - LSTM
 - BILSTM
 
 ### 4 中文关键词抽取
+
 NOT FINISHED
 
 ### 5 中文文本自动摘要
+
 - SEQ2SEQ ATTENTION
 
 参考文献：[A Neural Attention Model for Abstractive Sentence Summarization](https://arxiv.org/abs/1509.00685)
 
 ### 6 英文情感分析
+
 - MEMORY NETWORK
 
 参考文献：[Aspect Level Sentiment Classification with Deep Memory Network](https://arxiv.org/abs/1605.08900),
 [Memory Network](https://arxiv.org/pdf/1410.3916.pdf)
 
-后续会基于中文语料进行情感分析。
+本任务需要下载`glove.6B.300d.txt`，下载地址为：[GloVe: Global Vectors for Word Representation](https://nlp.stanford.edu/projects/glove/)。
+
+本任务现在仅仅使用英文语料，后续会基于中文语料进行情感分析。
 
 ### 7 依存句法分析
+
 NOT FINISHED
 
 ### 8 中文文本分类
+
 - CNN
 
 参考文献：[Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
@@ -55,18 +64,23 @@ NOT FINISHED
 - LSTM
 
 ### 10 依存句法分析
+
 NOT FINISHED
 
 ### 11 中文自由写诗
+
 NOT FINISHED
 
 ### 12 中文对话系统
+
 NOT FINISHED
 
 ### 13 中文问答系统
+
 NOT FINISHED
 
 ### 14 中英机器翻译
+
 NOT FINISHED
 
 ## 依赖库
