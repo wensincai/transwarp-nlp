@@ -5,7 +5,7 @@ import cPickle
 from collections import defaultdict
 import os, re
 import pandas as pd
-from transwarpnlp import segmenter
+from transwarpnlp.segment import segmenter
 
 pkg_path = os.path.dirname(os.path.dirname(os.getcwd()))
 

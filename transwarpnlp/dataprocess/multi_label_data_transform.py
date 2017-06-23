@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import cPickle
-from transwarpnlp import segmenter
+from transwarpnlp.segment import segmenter
 import codecs
 
 pkg_path = os.path.dirname(os.path.dirname(os.getcwd()))

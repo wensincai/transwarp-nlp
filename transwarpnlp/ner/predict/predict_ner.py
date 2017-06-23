@@ -2,7 +2,7 @@
 
 from __future__ import unicode_literals # compatible with python3 unicode
 
-from transwarpnlp import segmenter
+from transwarpnlp.segment import segmenter
 import ner_tagger
 import os
 

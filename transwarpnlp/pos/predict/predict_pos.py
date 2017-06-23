@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import os
 
-from transwarpnlp import segmenter
+from transwarpnlp.segment import segmenter
 import pos_tagger
 
 pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
