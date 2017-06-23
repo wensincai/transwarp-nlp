@@ -3,7 +3,9 @@
 import numpy as np
 from collections import defaultdict
 import os, re
-import pandas as pd
+from multi_class_classify.cnn_config import CnnConfig
+
+config = CnnConfig()
 
 def clean_str(string, TREC=False):
     """
@@ -25,9 +27,9 @@ def clean_str(string, TREC=False):
     string = re.sub(r"\s{2,}", " ", string)
     return string.strip() if TREC else string.strip().lower()
 
-def build_data(data_folder, cv=10, clean_string=False):
+def build_data(data_folder, vocab, clean_string=False):
     revs = []
-    vocab = defaultdict(float)
+
     for label, cfile in enumerate(os.listdir(data_folder)):
         file = os.path.join(data_folder, cfile)
         with open(file, "rb") as f:
@@ -44,12 +46,11 @@ def build_data(data_folder, cv=10, clean_string=False):
                         vocab[word] += 1
                     datum = {"y": label,
                              "text": orig_rev,
-                             "num_words": len(orig_rev.split()),
-                             "split": np.random.randint(0, cv)}
+                             "num_words": len(orig_rev.split())}
                     revs.append(datum)
-    return revs, vocab
+    return revs
 
-def add_unknown_words(word_vecs, vocab, min_df=1, k=50):
+def add_unknown_words(word_vecs, vocab, min_df=1, k=config.vector_size):
     """
     For words that occur in at least min_df documents, create a separate word vector.    
     0.25 is chosen so the unknown vectors have (approximately) same variance as pre-trained ones
@@ -58,7 +59,7 @@ def add_unknown_words(word_vecs, vocab, min_df=1, k=50):
         if word not in word_vecs and vocab[word] >= min_df:
             word_vecs[word] = np.random.uniform(-0.25, 0.25, k)
 
-def get_W(word_vecs, k=50):
+def get_W(word_vecs, k=config.vector_size):
     """
     Get word matrix. W[i] is the vector for word indexed by i
     """
@@ -76,19 +77,69 @@ def get_W(word_vecs, k=50):
     # W为一个词向量矩阵 一个word可以通过word_idx_map得到其在W中的索引，进而得到其词向量
     return W, word_idx_map, idx_word_map
 
+# 一些数据预处理的方法======================================
+def get_idx_from_sent(sent, word_idx_map, max_l):
+    """
+    Transforms sentence into a list of indices. Pad with zeroes.
+    """
+    x = []
+    words = sent.split()
+    for word in words:
+        if word in word_idx_map:
+            x.append(word_idx_map[word])
+    while len(x) < max_l:  # 长度不够的，补充0
+        x.append(0)
+    # 一个训练的一个输入 形式为[0,0,0,0,x11,x12,,,,0,0,0] 向量长度为max_l+2*filter_h-2
+    return x
 
 def get_data(data_dir):
+    vocab = defaultdict(float)
     print("loading data...")
-    revs, vocab = build_data(data_dir, cv=10, clean_string=True)
-    max_l = np.max(pd.DataFrame(revs)["num_words"])
-    print("data loaded!")
-    print("number of sentences: " + str(len(revs)))
-    print("vocab size: " + str(len(vocab)))
-    print("max sentence length: " + str(max_l))
+    train_revs = build_data(os.path.join(data_dir, "train"), vocab, clean_string=True)
+    test_revs = build_data(os.path.join(data_dir, "test"), vocab, clean_string=True)
+
+    train_revs = np.random.permutation(train_revs)  # 原始的sample正负样本是分别聚在一起的，这里随机打散
 
     print("loading word2vec vectors...")
     w2v = {}
     add_unknown_words(w2v, vocab)
-    W, word_idx_map, idx_word_map = get_W(w2v)
+    _, word_idx_map, idx_word_map = get_W(w2v)
 
-    return revs, W, word_idx_map, idx_word_map, vocab
+    return  train_revs, test_revs, idx_word_map, word_idx_map
+
+def generate_batch(revs, word_idx_map, mini_batch_index):
+    batch_size = config.batch_size
+    sentence_length = config.sentence_length
+    mini_batch_data = revs[mini_batch_index * batch_size:(mini_batch_index + 1) * batch_size]
+    batches = np.ndarray(shape=(batch_size, sentence_length), dtype=np.int64)
+    labels = np.ndarray(shape=batch_size, dtype=np.int64)
+
+    for i in range(batch_size):
+        sentence = mini_batch_data[i]["text"]
+        label = mini_batch_data[i]["y"]
+        labels[i] = label
+        batch = get_idx_from_sent(sentence, word_idx_map, sentence_length)
+        batches[i] = batch
+    return batches, labels
+
+def get_test_batch(revs, word_idx_map):
+    sentence_length = config.sentence_length
+    test_size = len(revs)
+    batches = np.ndarray(shape=(test_size, sentence_length), dtype=np.int64)
+    labels = np.ndarray(shape=[test_size], dtype=np.int64)
+    for i in range(test_size):
+        sentence = revs[i]["text"]
+        label = revs[i]["y"]
+
+        labels[i] = label
+        batch = get_idx_from_sent(sentence, word_idx_map, sentence_length)
+        batches[i] = batch
+
+    return batches, labels
+
+
+
+if __name__ == "__main__":
+    pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+    data_dir = os.path.join(pkg_path, "data/multi_class_classify/data")
+    get_data(data_dir)

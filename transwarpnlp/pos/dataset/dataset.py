@@ -40,6 +40,7 @@ class Dataset(object):
     def nextBatch(self, batch_size):
         """Return the next `batch_size` examples from this data set."""
         self._start = self._cursor
+        self._cursor += batch_size
         if self._start + batch_size > self._num_samples:
             rest_num_samples = self._num_samples - self._start
             word_batch = np.zeros((batch_size, self._word_data.shape[1]), dtype=np.int32)
@@ -49,7 +50,6 @@ class Dataset(object):
 
             return word_batch, tag_batch
         else:
-            self._cursor += batch_size
             end = self._cursor
             return self._word_data[self._start:end], self._tag_data[self._start:end]
 

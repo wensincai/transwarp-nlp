@@ -2,20 +2,63 @@
 
 import tensorflow as tf
 import numpy as np
-import model_cnn
-import time, os
+from multi_class_classify.dataset import rawdata
 
 class CNNModel(object):
-    def __init__(self, is_training, config):
-        self._is_training = is_training
-        self._batch_size = config.batch_size
+    def __init__(self, config):
+        # self._is_training = is_training
         self._config = config
-        self._loss = None
-        self._accuracy = None
-        self._embeddings = None
-        self._x_in = None
-        self._y_in = None
-        self._keep_prob = None
+        self._x_in = tf.placeholder(tf.int64, shape=[None, config.sentence_length])
+        self._y_in = tf.placeholder(tf.int64, shape=[None])
+        self._keep_prob = tf.placeholder(tf.float32)
+        # 要学习的词向量矩阵
+        self._embeddings = tf.Variable(tf.random_uniform([config.word_idx_map_szie, config.vector_size], -1.0, 1.0))
+
+        self._loss, self._accuracy = self.build_model()
+
+        self._global_step = tf.Variable(0)
+        self._learning_rate = tf.train.exponential_decay(1e-4, self._global_step, config.num_epoch, 0.99, staircase=True)  # 学习率递减
+        self._train_step = tf.train.AdagradOptimizer(self._learning_rate).minimize(self._loss, global_step=self._global_step)
+
+    @property
+    def loss(self):
+        return self._loss
+
+    @property
+    def config(self):
+        return self._config
+
+    @property
+    def accuracy(self):
+        return self._accuracy
+
+    @property
+    def embeddings(self):
+        return self._embeddings
+
+    @property
+    def x_in(self):
+        return self._x_in
+
+    @property
+    def y_in(self):
+        return self._y_in
+
+    @property
+    def keep_prob(self):
+        return self._keep_prob
+
+    @property
+    def learning_rate(self):
+        return self._learning_rate
+
+    @property
+    def global_step(self):
+        return self._global_step
+
+    @property
+    def train_step(self):
+      return self._train_step
 
     # 卷积图层 第一个卷积
     def conv2d(self, x, W):
@@ -27,15 +70,9 @@ class CNNModel(object):
 
     def build_model(self):
         config = self._config
-        self._x_in = tf.placeholder(tf.int64, shape=[None, config.sentence_length], name="input_x")
-        self._y_in = tf.placeholder(tf.int64, [None], name="input_y")
-        self._keep_prob = tf.placeholder(tf.float32)
-
         # Embedding layer===============================
-        # 要学习的词向量矩阵
-        embeddings = tf.Variable(tf.random_uniform([config.word_idx_map_szie, config.vector_size], -1.0, 1.0))
         # 输入reshape
-        x_image_tmp = tf.nn.embedding_lookup(embeddings, self._x_in)
+        x_image_tmp = tf.nn.embedding_lookup(self._embeddings, self._x_in)
         # 输入size: sentence_length*vector_size
         # x_image = tf.reshape(x_image_tmp, [-1,sentence_length,vector_size,1])======>>>>>
         # 将[None, sequence_length, embedding_size]转为[None, sequence_length, embedding_size, 1]
@@ -72,41 +109,14 @@ class CNNModel(object):
         scores = tf.nn.xw_plus_b(h_drop, W, b, name="scores")  # wx+b
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=scores, labels=self._y_in)
         loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
-
         correct_prediction = tf.equal(tf.argmax(scores, 1), self._y_in)
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-        self._loss = loss
-        self._accuracy = accuracy
-        self._embeddings = embeddings
-        return loss, accuracy, embeddings
-
-    def run(self, sess, train_step, train_path, revs, word_idx_map, global_step):
-
-        n_batches = len(revs) / self._config.batch_size
-        n_train_batches = int(np.round(n_batches * 0.9))
-
-        # summaries,====================
-        timestamp = str(int(time.time()))
-        out_dir = os.path.join(train_path, "summary", timestamp)
-        print("Writing to {}\n".format(out_dir))
-        loss_summary = tf.summary.scalar("loss", self._loss)
-        acc_summary = tf.summary.scalar("accuracy", self._accuracy)
-        train_summary_op = tf.summary.merge([loss_summary, acc_summary])
-        train_summary_dir = os.path.join(out_dir, "summaries", "train")
-        train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
-
-        batch_x_test, batch_y_test = model_cnn.get_test_batch(revs, word_idx_map)
-
-        for minibatch_index in np.random.permutation(range(n_train_batches)):
-            batch_x, batch_y = model_cnn.generate_batch(revs, word_idx_map, minibatch_index)
-            # train_step.run(feed_dict={x_in: batch_x, y_in: batch_y, keep_prob: 0.5})
-            feed_dict = {self._x_in: batch_x, self._y_in: batch_y, self._keep_prob: 0.5}
-            _, step, summaries = sess.run([train_step, global_step, train_summary_op], feed_dict)
-            train_summary_writer.add_summary(summaries, step)
-        test_accuracy = self._accuracy.eval(feed_dict={self._x_in: batch_x_test, self._y_in: batch_y_test, self._keep_prob: 1.0})
-        current_step = tf.train.global_step(sess, global_step)
-
-        return current_step, test_accuracy
+        return loss, accuracy
 
 
+def run(sess, model, revs, n_train_batches, word_idx_map):
+    for minibatch_index in np.random.permutation(range(n_train_batches)):  # 随机打散 每次输入的样本的顺序都不一样
+        batch_x, batch_y = rawdata.generate_batch(revs, word_idx_map, minibatch_index)
+        feed_dict = {model.x_in: batch_x, model.y_in: batch_y, model.keep_prob: 0.5}
+        _, step = sess.run([model.train_step, model.global_step], feed_dict)
