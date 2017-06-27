@@ -1,0 +1,8 @@
+python 2.7.3
+tensorflow (>= r1.0)
+numpy
+pandas
+matplotlib
+sklearn
+future
+cPickle

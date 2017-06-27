@@ -154,17 +154,6 @@ NOT FINISHED
 
 NOT FINISHED
 
-## 依赖库
-
-* python2.7
-* tensorflow (>= r1.0)
-* numpy
-* pandas
-* matplotlib
-* sklearn
-* future
-* cPickle
-
 ## 参考项目
 
 * https://github.com/tensorflow/models/tree/master/tutorials/rnn/ptb
