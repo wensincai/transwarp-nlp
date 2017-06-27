@@ -16,7 +16,6 @@ from ner.dataset import rawdata, dataset
 from ner.config import LargeConfig
 
 class ModelLoader(object):
-
     def __init__(self, data_path, ckpt_path, method):
         self.method = method
         self.data_path = data_path
@@ -87,12 +86,11 @@ class ModelLoader(object):
         predict_tag = rawdata.word_ids_to_sentence(data_path, predict_id)
         return zip(words, predict_tag)
     
-def load_model(root_path, method="lstm"):
-    data_path = os.path.join(root_path, "data/ner/data")  # POS vocabulary data path
+def load_model(data_dir, train_dir, method="lstm"):
     if method == "lstm":
-        ckpt_path = os.path.join(root_path, "data/ner/ckpt/lstm", "lstm.ckpt")  # POS model checkpoint path
+        ckpt_path = os.path.join(train_dir, "lstm/lstm.ckpt")  # POS model checkpoint path
     else:
-        ckpt_path = os.path.join(root_path, "data/ner/ckpt/bilstm", "bilstm.ckpt")  # POS model checkpoint path
+        ckpt_path = os.path.join(train_dir, "bilstm/bilstm.ckpt")  # POS model checkpoint path
 
-    return ModelLoader(data_path, ckpt_path, method)
+    return ModelLoader(data_dir, ckpt_path, method)
 

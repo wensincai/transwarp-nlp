@@ -23,7 +23,34 @@
 ### 3 中文命名实体识别
 
 - LSTM
+
+```
+训练：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --process=train \
+        --method=lstm
+预测：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --predict_file=path/to/predict_file \
+        --output_file=path/to/output_file \
+        --process=predict \
+        --method=lstm
+```
+
 - BILSTM
+
+```
+训练：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --process=train \
+        --method=bilstm
+预测：./run --train_dir=path/to/train_dir \ 
+        --data_dir=path/to/data_dir \
+        --predict_file=path/to/predict_file \
+        --output_file=path/to/output_file \
+        --process=predict \
+        --method=bilstm
+```
 
 ### 4 中文关键词抽取
 
