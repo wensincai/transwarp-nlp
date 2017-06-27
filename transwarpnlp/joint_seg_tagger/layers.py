@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+
+
 import tensorflow as tf
 import numpy as np
-import math
 
 class HiddenLayer(object):
     """

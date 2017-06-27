@@ -7,7 +7,7 @@ import cPickle as pickle
 import numpy as np
 import random
 
-from transwarpnlp.dataprocess import joint_data_transform
+from joint_seg_tagger.dataset import data_transform
 from transwarpnlp.joint_seg_tagger.layers import EmbeddingLayer, HiddenLayer, TimeDistributed, BiLSTM, Forward
 import transwarpnlp.joint_seg_tagger.batch as Batch
 
@@ -51,7 +51,7 @@ class Model(object):
         while len(self.buckets_char) > len(self.counts):
             self.counts.append(1)
 
-        self.real_batches = joint_data_transform.get_real_batch(self.counts, self.batch_size)
+        self.real_batches = data_transform.get_real_batch(self.counts, self.batch_size)
 
     def model_graph(self, trained_model, scope, emb_dim, gru, rnn_dim, rnn_num, drop_out=0.5,
                     emb=None, ng_embs=None):
@@ -254,16 +254,16 @@ class Model(object):
         best_seg = 0
         best_pos = 0
 
-        v_y = joint_data_transform.merge_bucket(v_y)
-        v_y = joint_data_transform.unpad_zeros(v_y)
+        v_y = data_transform.merge_bucket(v_y)
+        v_y = data_transform.unpad_zeros(v_y)
 
-        gold = joint_data_transform.decode_tags(v_y, idx2tag, self.tag_scheme)
+        gold = data_transform.decode_tags(v_y, idx2tag, self.tag_scheme)
 
-        input_chars = joint_data_transform.merge_bucket([v_x[0]])
+        input_chars = data_transform.merge_bucket([v_x[0]])
 
-        chars = joint_data_transform.decode_chars(input_chars[0], idx2char)
+        chars = data_transform.decode_chars(input_chars[0], idx2char)
 
-        gold_out = joint_data_transform.generate_output(chars, gold, self.tag_scheme)
+        gold_out = data_transform.generate_output(chars, gold, self.tag_scheme)
 
         for epoch in range(epochs):
             print('epoch: %d' % (epoch + 1))
@@ -294,15 +294,15 @@ class Model(object):
 
                 b_prediction = self.predict(data=v_b_x, sess=sess, model=self.input_v[idx] + self.output[idx],
                                             index=idx, batch_size=100)
-                b_prediction = joint_data_transform.decode_tags(b_prediction, idx2tag, self.tag_scheme)
+                b_prediction = data_transform.decode_tags(b_prediction, idx2tag, self.tag_scheme)
                 predictions.append(b_prediction)
 
             predictions = zip(*predictions)
-            predictions = joint_data_transform.merge_bucket(predictions)
+            predictions = data_transform.merge_bucket(predictions)
 
-            prediction_out = joint_data_transform.generate_output(chars, predictions, self.tag_scheme)
+            prediction_out = data_transform.generate_output(chars, predictions, self.tag_scheme)
 
-            scores = joint_data_transform.evaluator(prediction_out, gold_out, tag_scheme=self.tag_scheme)
+            scores = data_transform.evaluator(prediction_out, gold_out, tag_scheme=self.tag_scheme)
             scores = np.asarray(scores)
 
             c_score = np.max(scores[:, 1]) * np.max(scores[:, 0])
@@ -338,7 +338,7 @@ class Model(object):
         if self.word_vec and emb_path is not None:
             old_emb_weights = self.emb_layer.embeddings
             emb_dim = old_emb_weights.get_shape().as_list()[1]
-            new_emb = joint_data_transform.get_new_embeddings(new_chars, emb_dim, emb_path)
+            new_emb = data_transform.get_new_embeddings(new_chars, emb_dim, emb_path)
             n_emb_sh = new_emb.get_shape().as_list()
             if len(n_emb_sh) > 1:
                 new_emb_weights = tf.concat([old_emb_weights[:len(char2idx) - len(new_chars)], new_emb,
@@ -349,7 +349,7 @@ class Model(object):
         if self.ngram is not None and ng_emb_path is not None:
             old_gram_weights = [ng_layer.embeddings for ng_layer in self.gram_layers]
             ng_emb_dim = old_gram_weights[0].get_shape().as_list()[1]
-            new_ng_emb = joint_data_transform.get_new_ng_embeddings(new_grams, ng_emb_dim, ng_emb_path)
+            new_ng_emb = data_transform.get_new_ng_embeddings(new_grams, ng_emb_dim, ng_emb_path)
             for i in range(len(old_gram_weights)):
                 new_ng_weight = tf.concat([old_gram_weights[i][:len(gram2idx[i]) - len(new_grams[i])], new_ng_emb[i],
                                               old_gram_weights[i][len(gram2idx[i]):]], axis=0)
@@ -364,17 +364,17 @@ class Model(object):
 
     def test(self, sess, t_x, t_y, idx2tag, idx2char, outpath=None, ensemble=None, batch_size=200):
 
-        t_y = joint_data_transform.unpad_zeros(t_y)
-        gold = joint_data_transform.decode_tags(t_y, idx2tag, self.tag_scheme)
-        chars = joint_data_transform.decode_chars(t_x[0], idx2char)
-        gold_out = joint_data_transform.generate_output(chars, gold, self.tag_scheme)
+        t_y = data_transform.unpad_zeros(t_y)
+        gold = data_transform.decode_tags(t_y, idx2tag, self.tag_scheme)
+        chars = data_transform.decode_chars(t_x[0], idx2char)
+        gold_out = data_transform.generate_output(chars, gold, self.tag_scheme)
 
         prediction = self.predict(data=t_x, sess=sess, model=self.input_v[0] + self.output[0], index=0,
                                   ensemble=ensemble, batch_size=batch_size)
-        prediction = joint_data_transform.decode_tags(prediction, idx2tag, self.tag_scheme)
-        prediction_out = joint_data_transform.generate_output(chars, prediction, self.tag_scheme)
+        prediction = data_transform.decode_tags(prediction, idx2tag, self.tag_scheme)
+        prediction_out = data_transform.generate_output(chars, prediction, self.tag_scheme)
 
-        scores = joint_data_transform.evaluator(prediction_out, gold_out, tag_scheme=self.tag_scheme, verbose=True)
+        scores = data_transform.evaluator(prediction_out, gold_out, tag_scheme=self.tag_scheme, verbose=True)
 
         scores = np.asarray(scores)
         scores_f = scores[:, 1]
@@ -398,17 +398,17 @@ class Model(object):
                 final_out = prediction_out[best_idx]
             else:
                 final_out = prediction_out[0]
-            joint_data_transform.printer(final_out, outpath)
+                data_transform.printer(final_out, outpath)
 
     def tag(self, sess, r_x, idx2tag, idx2char, expected_scheme='BIES', outpath='out.txt', ensemble=None,
             batch_size=200, large_file=False):
 
-        chars = joint_data_transform.decode_chars(r_x[0], idx2char)
+        chars = data_transform.decode_chars(r_x[0], idx2char)
 
         prediction = self.predict(data=r_x, sess=sess, model=self.input_v[0] + self.output[0], index=0,
                                   ensemble=ensemble, batch_size=batch_size)
-        prediction = joint_data_transform.decode_tags(prediction, idx2tag, self.tag_scheme)
-        prediction_out = joint_data_transform.generate_output(chars, prediction, self.tag_scheme)
+        prediction = data_transform.decode_tags(prediction, idx2tag, self.tag_scheme)
+        prediction_out = data_transform.generate_output(chars, prediction, self.tag_scheme)
 
         scheme2idx_short = {'BI': 1, 'BIE': 2, 'BIES': 3, 'Voting': 4}
         scheme2idx_long = {'BIES': 0, 'long': 1}
@@ -422,4 +422,4 @@ class Model(object):
         if large_file:
             return final_out
         else:
-            joint_data_transform.printer(final_out, outpath)
+            data_transform.printer(final_out, outpath)

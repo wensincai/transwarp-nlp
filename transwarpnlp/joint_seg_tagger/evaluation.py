@@ -1,5 +1,4 @@
-import sys
-import os
+# -*- coding: utf-8 -*-
 
 def addTuples(tuple1, tuple2):
    return tuple([tuple1[i]+tuple2[i] for i in range(len(tuple1))])

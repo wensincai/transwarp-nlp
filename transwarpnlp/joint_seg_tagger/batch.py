@@ -2,7 +2,7 @@
 import random
 import numpy as np
 
-from transwarpnlp.dataprocess import joint_data_transform
+from joint_seg_tagger.dataset import data_transform
 
 def train(sess, model, batch_size, config, lr, lrv, data, dr=None, drv=None, verbose=False):
     assert len(data) == len(model)
@@ -82,19 +82,19 @@ def predict(sess, model, data, dr=None, transitions=None, crf=True, decode_sess=
                 pre_values = [ob, trans[i], length, batch_size]
                 assert len(pre_values) == len(decode_holders[i])
                 max_scores, max_scores_pre = decode_sess.run(scores[i], feed_dict={i: h for i, h in zip(decode_holders[i], pre_values)})
-                output[i].extend(joint_data_transform.viterbi(max_scores, max_scores_pre, length, batch_size))
+                output[i].extend(data_transform.viterbi(max_scores, max_scores_pre, length, batch_size))
         elif argmax:
             for i in range(len(predictions)):
                 pre = sess.run(predictions[i], feed_dict={i: h for i, h in zip(input_v, holders)})
                 pre = np.argmax(pre, axis=2)
                 pre = pre.tolist()
-                pre = joint_data_transform.trim_output(pre, length)
+                pre = data_transform.trim_output(pre, length)
                 output[i].extend(pre)
         else:
             for i in range(len(predictions)):
                 pre = sess.run(predictions[i], feed_dict={i: h for i, h in zip(input_v, holders)})
                 pre = pre.tolist()
-                pre = joint_data_transform.trim_output(pre, length)
+                pre = data_transform.trim_output(pre, length)
                 output[i].extend(pre)
         start_idx += batch_size
     return output

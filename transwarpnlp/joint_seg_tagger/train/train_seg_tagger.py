@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os, time
-from transwarpnlp.joint_seg_tagger.config import Config
-from transwarpnlp.dataprocess import joint_data_transform
-from transwarpnlp.joint_seg_tagger.model import Model
+from joint_seg_tagger.config import Config
+from joint_seg_tagger.dataset import data_transform
+from joint_seg_tagger.model import Model
 import tensorflow as tf
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 config = Config()
 
@@ -16,38 +16,38 @@ def train_joint(data_path):
 
     if config.ngram > 1 and not os.path.isfile(data_path + '/model/' + str(config.ngram) + 'gram.txt') \
         or (not os.path.isfile(data_path + '/model/' + 'chars.txt')):
-        joint_data_transform.get_vocab_tag(data_path, [train_file, dev_file], ngram=config.ngram)
+        data_transform.get_vocab_tag(data_path, [train_file, dev_file], ngram=config.ngram)
 
     # 字集，标签集，n元词集
-    chars, tags, ngram = joint_data_transform.read_vocab_tag(data_path, config.ngram)
+    chars, tags, ngram = data_transform.read_vocab_tag(data_path, config.ngram)
 
     emb = None
     emb_dim = config.embeddings_dimension
     if config.pre_embeddings:
         short_emb = "glove.txt"
         if not os.path.isfile(data_path + '/model/' + short_emb + '_sub.txt'):
-            joint_data_transform.get_sample_embedding(data_path, short_emb, chars)
-            emb_dim, emb = joint_data_transform.read_sample_embedding(data_path, short_emb)
+            data_transform.get_sample_embedding(data_path, short_emb, chars)
+            emb_dim, emb = data_transform.read_sample_embedding(data_path, short_emb)
             assert config.embeddings_dimension == emb_dim
     else:
         print('Using random embeddings...')
 
-    char2idx, idx2char, tag2idx, idx2tag = joint_data_transform.get_dic(chars, tags)
+    char2idx, idx2char, tag2idx, idx2tag = data_transform.get_dic(chars, tags)
 
     # 训练样本id，训练标签id，句子的最大字符数，句子的最大词数，句子的最大词长
-    train_x, train_y, train_max_slen_c, train_max_slen_w, train_max_wlen =\
-        joint_data_transform.get_input_vec(data_path, train_file, char2idx, tag2idx, config.tag_scheme)
+    train_x, train_y, train_max_slen_c, train_max_slen_w, train_max_wlen = \
+        data_transform.get_input_vec(data_path, train_file, char2idx, tag2idx, config.tag_scheme)
 
     dev_x, dev_y, dev_max_slen_c, dev_max_slen_w, dev_max_wlen = \
-        joint_data_transform.get_input_vec(data_path, dev_file, char2idx, tag2idx, config.tag_scheme)
+        data_transform.get_input_vec(data_path, dev_file, char2idx, tag2idx, config.tag_scheme)
 
     # 将多元词加入训练和验证语料
     nums_grams = []
     ng_embs = None
     if config.ngram > 1:
-        gram2idx = joint_data_transform.get_ngram_dic(ngram)
-        train_gram = joint_data_transform.get_gram_vec(data_path, train_file, gram2idx)
-        dev_gram = joint_data_transform.get_gram_vec(data_path, dev_file, gram2idx)
+        gram2idx = data_transform.get_ngram_dic(ngram)
+        train_gram = data_transform.get_gram_vec(data_path, train_file, gram2idx)
+        dev_gram = data_transform.get_gram_vec(data_path, dev_file, gram2idx)
         train_x += train_gram
         dev_x += dev_gram
 
@@ -61,15 +61,15 @@ def train_joint(data_path):
     print('Longest sentence by word is %d. ' % max_step_w)
     print('Longest word is %d. ' % max_w_len)
 
-    b_train_x, b_train_y = joint_data_transform.buckets(train_x, train_y, size=config.bucket_size)
-    b_dev_x, b_dev_y = joint_data_transform.buckets(dev_x, dev_y, size=config.bucket_size)
+    b_train_x, b_train_y = data_transform.buckets(train_x, train_y, size=config.bucket_size)
+    b_dev_x, b_dev_y = data_transform.buckets(dev_x, dev_y, size=config.bucket_size)
 
-    b_train_x, b_train_y, b_buckets, b_counts = joint_data_transform.pad_bucket(b_train_x, b_train_y)
-    b_dev_x, b_dev_y, b_buckets, _ = joint_data_transform.pad_bucket(b_dev_x, b_dev_y, bucket_len_c=b_buckets)
+    b_train_x, b_train_y, b_buckets, b_counts = data_transform.pad_bucket(b_train_x, b_train_y)
+    b_dev_x, b_dev_y, b_buckets, _ = data_transform.pad_bucket(b_dev_x, b_dev_y, bucket_len_c=b_buckets)
 
     print('Training set: %d instances; Dev set: %d instances.' % (len(train_x[0]), len(dev_x[0])))
 
-    nums_tags = joint_data_transform.get_nums_tags(tag2idx, config.tag_scheme)
+    nums_tags = data_transform.get_nums_tags(tag2idx, config.tag_scheme)
 
     # allow_soft_placement=True ： 如果你指定的设备不存在，允许TF自动分配设备
     configProto = tf.ConfigProto(allow_soft_placement=True)

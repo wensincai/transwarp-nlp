@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+
 import codecs
 import numpy as np
 import math
 import os
 import re
 import tensorflow as tf
-from transwarpnlp.joint_seg_tagger.evaluation import score
+from joint_seg_tagger.evaluation import score
 
 def get_ngrams(raw, gram):
     gram_set = set()

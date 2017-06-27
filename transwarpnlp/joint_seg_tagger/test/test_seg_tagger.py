@@ -4,11 +4,11 @@ import os, time
 import codecs
 import cPickle as pickle
 from transwarpnlp.joint_seg_tagger.config import Config
-from transwarpnlp.dataprocess import joint_data_transform
+from joint_seg_tagger.dataset import data_transform
 from transwarpnlp.joint_seg_tagger.model import Model
 import tensorflow as tf
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 config = Config()
 
@@ -40,9 +40,6 @@ def test_joint(data_path, method="test"):
     rnn_dim = param_dic['rnn_dim']
     rnn_num = param_dic['rnn_num']
     drop_out = param_dic['drop_out']
-    con_width = param_dic['filter_size']
-    cv_kernels = param_dic['filters']
-    pooling_size = param_dic['pooling_size']
     num_ngram = param_dic['ngram']
 
     ngram = 1
@@ -50,17 +47,17 @@ def test_joint(data_path, method="test"):
     if num_ngram is not None:
         ngram = len(num_ngram) + 1
 
-    chars, tags, grams = joint_data_transform.read_vocab_tag(data_path, ngram)
-    char2idx, idx2char, tag2idx, idx2tag = joint_data_transform.get_dic(chars, tags)
+    chars, tags, grams = data_transform.read_vocab_tag(data_path, ngram)
+    char2idx, idx2char, tag2idx, idx2tag = data_transform.get_dic(chars, tags)
     new_chars, new_grams, new_gram_emb, gram2idx = None, None, None, None
     test_x, test_y, raw_x = None, None, None
     max_step = None
 
     if method == "test":
-        new_chars = joint_data_transform.get_new_chars(data_path + '/' + test_file, char2idx)
-        char2idx, idx2char = joint_data_transform.update_char_dict(char2idx, new_chars)
-        test_x, test_y, test_max_slen_c, test_max_slen_w, test_max_wlen =\
-            joint_data_transform.get_input_vec(data_path, test_file, char2idx, tag2idx, tag_scheme=tag_scheme)
+        new_chars = data_transform.get_new_chars(data_path + '/' + test_file, char2idx)
+        char2idx, idx2char = data_transform.update_char_dict(char2idx, new_chars)
+        test_x, test_y, test_max_slen_c, test_max_slen_w, test_max_wlen = \
+            data_transform.get_input_vec(data_path, test_file, char2idx, tag2idx, tag_scheme=tag_scheme)
         print('Test set: %d instances.' % len(test_x[0]))
 
         max_step = test_max_slen_c
@@ -70,34 +67,34 @@ def test_joint(data_path, method="test"):
         print('Longest word is %d. ' % test_max_wlen)
 
         if ngram > 1:
-            gram2idx = joint_data_transform.get_ngram_dic(grams)
-            new_grams = joint_data_transform.get_new_grams(data_path + '/' + test_file, gram2idx)
-            test_gram = joint_data_transform.get_gram_vec(data_path, test_file, gram2idx)
+            gram2idx = data_transform.get_ngram_dic(grams)
+            new_grams = data_transform.get_new_grams(data_path + '/' + test_file, gram2idx)
+            test_gram = data_transform.get_gram_vec(data_path, test_file, gram2idx)
             test_x += test_gram
         for k in range(len(test_x)):
-            test_x[k] = joint_data_transform.pad_zeros(test_x[k], max_step)
+            test_x[k] = data_transform.pad_zeros(test_x[k], max_step)
         for k in range(len(test_y)):
-            test_y[k] = joint_data_transform.pad_zeros(test_y[k], max_step)
+            test_y[k] = data_transform.pad_zeros(test_y[k], max_step)
     elif method == "tag":
-        new_chars = joint_data_transform.get_new_chars(data_path + '/' + raw_file, char2idx, type='raw')
-        char2idx, idx2char = joint_data_transform.update_char_dict(char2idx, new_chars)
+        new_chars = data_transform.get_new_chars(data_path + '/' + raw_file, char2idx, type='raw')
+        char2idx, idx2char = data_transform.update_char_dict(char2idx, new_chars)
 
         if not config.tag_large:
-            raw_x, raw_len = joint_data_transform.get_input_vec_raw(data_path, raw_file, char2idx)
+            raw_x, raw_len = data_transform.get_input_vec_raw(data_path, raw_file, char2idx)
             print('Numbers of sentences: %d.' % len(raw_x[0]))
             max_step = raw_len
         else:
-            max_step = joint_data_transform.get_maxstep(data_path, raw_file)
+            max_step = data_transform.get_maxstep(data_path, raw_file)
 
         print('Longest sentence is %d. ' % max_step)
         if ngram > 1:
-            gram2idx = joint_data_transform.get_ngram_dic(grams)
+            gram2idx = data_transform.get_ngram_dic(grams)
             if not config.tag_large:
-                raw_gram = joint_data_transform.get_gram_vec(data_path, raw_file, gram2idx, is_raw=True)
+                raw_gram = data_transform.get_gram_vec(data_path, raw_file, gram2idx, is_raw=True)
                 raw_x += raw_gram
         if not config.tag_large:
             for k in range(len(raw_x)):
-                raw_x[k] = joint_data_transform.pad_zeros(raw_x[k], max_step)
+                raw_x[k] = data_transform.pad_zeros(raw_x[k], max_step)
 
     configProto = tf.ConfigProto(allow_soft_placement=True)
     print('Initialization....')
@@ -151,14 +148,14 @@ def test_joint(data_path, method="test"):
                         for line in l_file:
                             lines.append(line.strip())
                             if len(lines) >= config.large_size:
-                                raw_x, _ = joint_data_transform.get_input_vec_line(lines, char2idx)
+                                raw_x, _ = data_transform.get_input_vec_line(lines, char2idx)
 
                                 if ngram > 1:
-                                    raw_gram = joint_data_transform.get_gram_vec_raw(lines, gram2idx)
+                                    raw_gram = data_transform.get_gram_vec_raw(lines, gram2idx)
                                     raw_x += raw_gram
 
                                 for k in range(len(raw_x)):
-                                    raw_x[k] = joint_data_transform.pad_zeros(raw_x[k], max_step)
+                                    raw_x[k] = data_transform.pad_zeros(raw_x[k], max_step)
 
                                 out = model.tag(sess=sess, r_x=raw_x, idx2tag=idx2tag, idx2char=idx2char,
                                                 outpath=output_file, ensemble=config.ensemble,
@@ -168,14 +165,14 @@ def test_joint(data_path, method="test"):
                                     l_writer.write(l_out + '\n')
                                 lines = []
                         if len(lines) > 0:
-                            raw_x, _ = joint_data_transform.get_input_vec_line(lines, char2idx)
+                            raw_x, _ = data_transform.get_input_vec_line(lines, char2idx)
 
                             if ngram > 1:
-                                raw_gram = joint_data_transform.get_gram_vec_raw(lines, gram2idx)
+                                raw_gram = data_transform.get_gram_vec_raw(lines, gram2idx)
                                 raw_x += raw_gram
 
                             for k in range(len(raw_x)):
-                                raw_x[k] = joint_data_transform.pad_zeros(raw_x[k], max_step)
+                                raw_x[k] = data_transform.pad_zeros(raw_x[k], max_step)
 
                             out = model.tag(sess=sess, r_x=raw_x, idx2tag=idx2tag, idx2char=idx2char,
                                             outpath=output_file, ensemble=config.ensemble, batch_size=config.tag_batch,
