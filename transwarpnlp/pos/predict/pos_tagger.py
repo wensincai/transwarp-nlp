@@ -87,16 +87,14 @@ class ModelLoader(object):
 
             _, logits  = session.run(fetches, feed_dict)
             predict_id.append(int(np.argmax(logits)))    
-            #print (logits)
         predict_tag = rawdata.word_ids_to_sentence(data_path, predict_id)
         return zip(words, predict_tag)
     
-def load_model(root_path, method="lstm"):
-    data_path = os.path.join(root_path, "data/pos/data") # POS vocabulary data path
+def load_model(data_dir, train_dir, method="lstm"):
     if method == "lstm":
-        ckpt_path = os.path.join(root_path, "data/pos/ckpt/lstm", "lstm.ckpt") # POS model checkpoint path
+        ckpt_path = os.path.join(train_dir, "lstm/lstm.ckpt") # POS model checkpoint path
     else:
-        ckpt_path = os.path.join(root_path, "data/pos/ckpt/bilstm", "bilstm.ckpt") # POS model checkpoint path
+        ckpt_path = os.path.join(train_dir, "bilstm/bilstm.ckpt") # POS model checkpoint path
 
-    return ModelLoader(data_path, ckpt_path, method)
+    return ModelLoader(data_dir, ckpt_path, method)
 

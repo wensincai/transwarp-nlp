@@ -1,26 +1,20 @@
 #coding:utf-8
 
-
 from __future__ import unicode_literals
-import os
+import codecs
 
 from transwarpnlp.segment import segmenter
 import pos_tagger
 
-pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-
-tagger = pos_tagger.load_model(pkg_path, 'bilstm')
-
-#tagger = pos_tagger.load_model(pkg_path, 'bilstm')
-
-
-#Segmentation
-text = "我爱吃北京烤鸭"
-words = segmenter.seg(text)
-print(" ".join(words).encode('utf-8'))
-
-#POS Tagging
-tagging = tagger.predict(words)
-for (w,t) in tagging:
-    str = w + "/" + t
-    print(str.encode('utf-8'))
+def predict(data_dir, train_dir, method, predict_file, output_file):
+    tagger = pos_tagger.load_model(data_dir, train_dir, method)
+    with codecs.open(predict_file, 'r', 'utf-8') as predict,\
+            codecs.open(output_file, 'w', 'utf-8') as output:
+        lines = predict.readlines()
+        for line in lines:
+            words = segmenter.seg(line)
+            tagging = tagger.predict(words)
+            for (w, t) in tagging:
+                str = w + "/" + t
+                output.write(str + ' ')
+            output.write('\n')

@@ -151,7 +151,7 @@ def run(session, model, dataset, eval_op, pos_train_dir, verbose=False):
     
   # Save Model to CheckPoint when is_training is True
   if model.is_training:
-    checkpoint_path = os.path.join(pos_train_dir, "bilstm" ,"bilstm.ckpt")
+    checkpoint_path = os.path.join(pos_train_dir, "bilstm/bilstm.ckpt")
     model.saver.save(session, checkpoint_path)
     print("Model Saved... at time step " + str(step))
   

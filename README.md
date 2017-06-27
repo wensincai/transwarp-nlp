@@ -18,17 +18,15 @@
 ### 2 序列化标注
 
 - LSTM
-- BILSTM
-
-### 3 中文命名实体识别
-
-- LSTM
 
 ```
+cd transwarpnlp/pos
+
 训练：./run --train_dir=path/to/train_dir \
         --data_dir=path/to/data_dir \
         --process=train \
         --method=lstm
+        
 预测：./run --train_dir=path/to/train_dir \
         --data_dir=path/to/data_dir \
         --predict_file=path/to/predict_file \
@@ -37,9 +35,55 @@
         --method=lstm
 ```
 
+`train_dir`表示训练模型存放的路径，`data_dir`表示训练、测试数据存放的路径。
+ `predict_file`表示待标注的文件。 `output_file`表示标注后的结果文件。
+
 - BILSTM
 
 ```
+cd transwarpnlp/pos
+
+训练：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --process=train \
+        --method=bilstm
+        
+预测：./run --train_dir=path/to/train_dir \ 
+        --data_dir=path/to/data_dir \
+        --predict_file=path/to/predict_file \
+        --output_file=path/to/output_file \
+        --process=predict \
+        --method=bilstm
+```
+
+### 3 中文命名实体识别
+
+- LSTM
+
+```
+cd transwarpnlp/ner
+
+训练：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --process=train \
+        --method=lstm
+        
+预测：./run --train_dir=path/to/train_dir \
+        --data_dir=path/to/data_dir \
+        --predict_file=path/to/predict_file \
+        --output_file=path/to/output_file \
+        --process=predict \
+        --method=lstm
+```
+
+`train_dir`表示训练模型存放的路径，`data_dir`表示训练、测试数据存放的路径。
+ `predict_file`表示待标注的文件。 `output_file`表示标注后的结果文件。
+ 
+- BILSTM
+
+```
+cd transwarpnlp/ner
+
 训练：./run --train_dir=path/to/train_dir \
         --data_dir=path/to/data_dir \
         --process=train \
@@ -90,7 +134,7 @@ NOT FINISHED
 参考文献：[Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
 - LSTM
 
-### 10 依存句法分析
+### 10 中文Word2Vec训练
 
 NOT FINISHED
 
