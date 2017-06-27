@@ -45,7 +45,7 @@ def train_cnn_classfier(train_path):
             path = saver.save(sess, checkpoint_prefix, global_step=current_step)
             print("Saved model checkpoint to {}\n".format(path))
 
-    return embeddings, sess, idx_word_map
+    return model.embeddings, sess, idx_word_map
 
 
 if __name__ == "__main__":
