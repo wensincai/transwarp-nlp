@@ -10,24 +10,22 @@ pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 
 config = Config()
 
-def train_joint(data_path):
-    train_file = "/data/train1.txt"
-    dev_file = "/data/dev1.txt"
+def train_joint(train_dir, train_file, dev_file, glove_file):
 
-    if config.ngram > 1 and not os.path.isfile(data_path + '/model/' + str(config.ngram) + 'gram.txt') \
-        or (not os.path.isfile(data_path + '/model/' + 'chars.txt')):
-        data_transform.get_vocab_tag(data_path, [train_file, dev_file], ngram=config.ngram)
+    if config.ngram > 1 and not os.path.isfile(train_dir + '/' + str(config.ngram) + 'gram.txt') \
+        or (not os.path.isfile(train_dir + '/chars.txt')):
+        data_transform.get_vocab_tag(train_dir, [train_file, dev_file], ngram=config.ngram)
 
     # 字集，标签集，n元词集
-    chars, tags, ngram = data_transform.read_vocab_tag(data_path, config.ngram)
+    chars, tags, ngram = data_transform.read_vocab_tag(train_dir, config.ngram)
 
     emb = None
     emb_dim = config.embeddings_dimension
     if config.pre_embeddings:
         short_emb = "glove.txt"
-        if not os.path.isfile(data_path + '/model/' + short_emb + '_sub.txt'):
-            data_transform.get_sample_embedding(data_path, short_emb, chars)
-            emb_dim, emb = data_transform.read_sample_embedding(data_path, short_emb)
+        if not os.path.isfile(train_dir + '/' + short_emb + '_sub.txt'):
+            data_transform.get_sample_embedding(glove_file, train_dir, short_emb, chars)
+            emb_dim, emb = data_transform.read_sample_embedding(train_dir, short_emb)
             assert config.embeddings_dimension == emb_dim
     else:
         print('Using random embeddings...')
@@ -36,18 +34,18 @@ def train_joint(data_path):
 
     # 训练样本id，训练标签id，句子的最大字符数，句子的最大词数，句子的最大词长
     train_x, train_y, train_max_slen_c, train_max_slen_w, train_max_wlen = \
-        data_transform.get_input_vec(data_path, train_file, char2idx, tag2idx, config.tag_scheme)
+        data_transform.get_input_vec(train_file, char2idx, tag2idx, config.tag_scheme)
 
     dev_x, dev_y, dev_max_slen_c, dev_max_slen_w, dev_max_wlen = \
-        data_transform.get_input_vec(data_path, dev_file, char2idx, tag2idx, config.tag_scheme)
+        data_transform.get_input_vec(dev_file, char2idx, tag2idx, config.tag_scheme)
 
     # 将多元词加入训练和验证语料
     nums_grams = []
     ng_embs = None
     if config.ngram > 1:
         gram2idx = data_transform.get_ngram_dic(ngram)
-        train_gram = data_transform.get_gram_vec(data_path, train_file, gram2idx)
-        dev_gram = data_transform.get_gram_vec(data_path, dev_file, gram2idx)
+        train_gram = data_transform.get_gram_vec(train_file, gram2idx)
+        dev_gram = data_transform.get_gram_vec(dev_file, gram2idx)
         train_x += train_gram
         dev_x += dev_gram
 
@@ -83,7 +81,7 @@ def train_joint(data_path):
                           counts=b_counts, tag_scheme=config.tag_scheme, word_vec=config.word_vector,
                           crf=config.crf, ngram=nums_grams, batch_size=config.train_batch)
 
-            model.model_graph(trained_model=data_path + '/model/trained_model', scope=scope, emb_dim=emb_dim,
+            model.model_graph(trained_model=train_dir + '/trained_model', scope=scope, emb_dim=emb_dim,
                               gru=config.gru, rnn_dim=config.rnn_cell_dimension, rnn_num=config.rnn_layer_number,
                               emb=emb, ng_embs=ng_embs, drop_out=config.dropout_rate)
             t = time.time()
@@ -110,10 +108,6 @@ def train_joint(data_path):
         print('Done. Time consumed: %d seconds' % int(time.time() - t))
         t = time.time()
         model.train(t_x=b_train_x, t_y=b_train_y, v_x=b_dev_x, v_y=b_dev_y, idx2tag=idx2tag, idx2char=idx2char,
-                    sess=sess, epochs=config.epochs, trained_model=data_path + '/model/trained_model_weights',
+                    sess=sess, epochs=config.epochs, trained_model=train_dir + '/trained_model_weights',
                     lr=config.learning_rate, decay=config.decay_rate)
         print('Done. Time consumed: %d seconds' % int(time.time() - t))
-
-if __name__ == "__main__":
-    data_path = os.path.join(pkg_path, "data/joint")
-    train_joint(data_path)

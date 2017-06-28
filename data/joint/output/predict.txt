@@ -1,0 +1,2 @@
+山_PROPN 前_PART 有_PART 个圆_NOUN 圆脸_NOUN
+我_VERB 喜欢_PROPN 吃_PART 北京_PROPN 烤鸭_PROPN

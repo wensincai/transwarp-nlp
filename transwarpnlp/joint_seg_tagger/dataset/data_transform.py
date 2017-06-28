@@ -34,14 +34,14 @@ def get_ngrams(raw, gram):
 3 二元词集
 4 三元词集
 '''
-def get_vocab_tag(path, fileList, ngram=1):
-    out_char = codecs.open(path + '/model/chars.txt', 'w', encoding='utf-8')
-    out_tag = codecs.open(path + '/model/tags.txt', 'w', encoding='utf-8')
+def get_vocab_tag(train_dir, fileList, ngram=1):
+    out_char = codecs.open(train_dir + '/chars.txt', 'w', encoding='utf-8')
+    out_tag = codecs.open(train_dir + '/tags.txt', 'w', encoding='utf-8')
     char_set = set()
     tag_set = {}
     raw = []
     for file_name in fileList:
-        for line in codecs.open(path + '/' + file_name, 'rb', encoding='utf-8'):
+        for line in codecs.open(file_name, 'rb', encoding='utf-8'):
             line = line.strip()
             raw_l = ''
             sets = line.split(' ')
@@ -67,7 +67,7 @@ def get_vocab_tag(path, fileList, ngram=1):
     char_set = list(char_set)
     if ngram > 1:
         for i in range(2, ngram + 1):
-            out_gram = codecs.open(path + '/model/' + str(i) + 'gram.txt', 'w', encoding='utf-8')
+            out_gram = codecs.open(train_dir + '/' + str(i) + 'gram.txt', 'w', encoding='utf-8')
             grams = get_ngrams(raw, i)
             for g in grams:
                 out_gram.write(g + '\n')
@@ -86,9 +86,9 @@ def read_vocab_tag(path, ngrams=1):
     char_set = set()
     tag_set = {}
     ngram_set = None
-    for line in codecs.open(path + '/model/chars.txt', 'rb', encoding='utf-8'):
+    for line in codecs.open(path + '/chars.txt', 'rb', encoding='utf-8'):
         char_set.add(line.strip())
-    for line in codecs.open(path + '/model/tags.txt', 'rb', encoding='utf-8'):
+    for line in codecs.open(path + '/tags.txt', 'rb', encoding='utf-8'):
         line = line.strip()
         sp = line.split(' ')
         tag_set[sp[0]] = int(sp[1])
@@ -97,7 +97,7 @@ def read_vocab_tag(path, ngrams=1):
         ngram_set = []
         for i in range(2, ngrams + 1):
             ng_set = set()
-            for line in codecs.open(path + '/model/' + str(i) + 'gram.txt', 'rb', encoding='utf-8'):
+            for line in codecs.open(path + '/' + str(i) + 'gram.txt', 'rb', encoding='utf-8'):
                 line = line.strip()
                 ng_set.add(line)
             ngram_set.append(ng_set)
@@ -106,16 +106,15 @@ def read_vocab_tag(path, ngrams=1):
 '''
 初始化<P>，<UNK>，<NUM>，<FW>的词向量，并获得字集合对应的词向量集合
 '''
-def get_sample_embedding(path, short_emb, chars, default='unk'):
+def get_sample_embedding(glove_file, path, short_emb, chars, default='unk'):
     # short_emb = emb[emb.index('/') + 1: emb.index('.')]
-    emb = os.path.join(path, "data", short_emb)
     emb_dic = {}
-    for line in codecs.open(emb, 'rb', encoding='utf-8'):
+    for line in codecs.open(glove_file, 'rb', encoding='utf-8'):
         line = line.strip()
         sets = line.split(' ')
         emb_dic[sets[0]] = np.asarray(sets[1:], dtype='float32')
     emb_dim = len(emb_dic.values()[0])
-    fout = codecs.open(path + '/model/' + short_emb + '_sub.txt', 'w', encoding='utf-8')
+    fout = codecs.open(path + '/' + short_emb + '_sub.txt', 'w', encoding='utf-8')
     p_line = '<P>'
     if '<P>' in emb_dic:
         for emb in emb_dic['<P>']:
@@ -174,7 +173,7 @@ def get_sample_embedding(path, short_emb, chars, default='unk'):
 
 def read_sample_embedding(path, short_emb):
     emb_values = []
-    for line in codecs.open(path + '/model/' + short_emb + '_sub.txt', 'rb', encoding='utf-8'):
+    for line in codecs.open(path + '/' + short_emb + '_sub.txt', 'rb', encoding='utf-8'):
         line = line.strip()
         sets = line.split(' ')
         emb_values.append(np.asarray(sets[1:], dtype='float32'))
@@ -228,14 +227,14 @@ def get_dic(chars, tags):
 '''
 获取每个字符的id以及它对应的tag id
 '''
-def get_input_vec(path, fname, char2index, tag2index, tag_scheme='BIES'):
+def get_input_vec(fname, char2index, tag2index, tag_scheme='BIES'):
     max_sent_len_c = 0 # 句子的最大字数
     max_sent_len_w = 0 # 句子的最大词数
     max_word_len = 0 # 句子的最大词长
     t_len = 0
     x_m = [[]]
     y_m = [[]]
-    for line in codecs.open(path + '/' + fname, 'r', encoding='utf-8'):
+    for line in codecs.open(fname, 'r', encoding='utf-8'):
         charIndices = []
         raw_l = ''
         tagIndices = {}
@@ -324,14 +323,14 @@ def gram_vec(raw, dic):
     return out
 
 # 获取多元词的向量
-def get_gram_vec(path, fname, gram2index, is_raw=False):
+def get_gram_vec(fname, gram2index, is_raw=False):
     raw = []
     if is_raw:
-        for line in codecs.open(path + '/' + fname, 'r', encoding='utf-8'):
+        for line in codecs.open(fname, 'r', encoding='utf-8'):
             line = line.strip()
             raw.append(line)
     else:
-        for line in codecs.open(path + '/' + fname, 'r', encoding='utf-8'):
+        for line in codecs.open(fname, 'r', encoding='utf-8'):
             line = line.strip()
             segs = line.split(' ')
             if len(segs) > 0 and len(line) > 0:
@@ -605,11 +604,11 @@ def update_gram_dicts(gram2idx, new_grams):
         new_gram2idx.append(new_dic)
     return new_gram2idx
 
-def get_input_vec_raw(path, fname, char2index):
+def get_input_vec_raw(fname, char2index):
     max_len = 0
     x_m = [[]]
 
-    for line in codecs.open(path + '/' + fname, 'r', encoding='utf-8'):
+    for line in codecs.open(fname, 'r', encoding='utf-8'):
         charIndices = []
         line = re.sub('[\s+]', '', line)
         if len(line) > max_len:
@@ -619,9 +618,9 @@ def get_input_vec_raw(path, fname, char2index):
         x_m[0].append(charIndices)
     return x_m, max_len
 
-def get_maxstep(path, raw_file):
+def get_maxstep(raw_file):
     maxstep = 0
-    for line in codecs.open(path + '/' + raw_file, 'r', encoding='utf-8'):
+    for line in codecs.open(raw_file, 'r', encoding='utf-8'):
         line = line.strip()
         if len(line) > maxstep:
             maxstep = len(line)

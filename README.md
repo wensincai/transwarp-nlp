@@ -35,6 +35,28 @@ cd transwarpnlp/word2vec
 
 - BILSTM + CRF
 
+```
+cd transwarpnlp/joint_seg_tagger
+
+训练：./run --train_dir=path/to/train_dir \
+        --train_file=path/to/train_file \
+        --dev_file=path/to/dev_file \
+        --glove_file=path/to/dev_file \
+        --method=train
+
+测试：./run --train_dir=path/to/train_dir \
+        --test_file=path/to/test_file \
+        --test_output_file=path/to/test_output_file \
+        --method=test
+        
+测试：./run --train_dir=path/to/train_dir \
+        --predict_file=path/to/predict_file \
+        --predict_output_file=path/to/predict_output_file \
+        --method=tag
+```
+
+`train_dir`表示模型保存的路径。`glove_file`表示已知的词向量文件。
+
 参考文献：[Bidirectional LSTM-CRF Models for Sequence Tagging](https://arxiv.org/abs/1508.01991)
 
 ### 3 序列化标注
