@@ -5,7 +5,29 @@
 
 ## 功能实现
 
-### 1 中文分词
+### 1 中文Word2Vec训练
+
+- skip gram
+
+```
+cd transwarpnlp/word2vec
+
+训练：./train --data_file=path/to/data_file \
+        --output_file=path/to/data_dir \
+        --vocabulary_size=50000 \
+        --batch_size=128 \
+        --embedding_size=128 \
+        --skip_window=1 \
+        --num_skips=2 \
+        --valid_size=16 \
+        --valid_window=100 \
+        --num_sampled=64 \
+        --num_steps=100001
+```
+
+`data_file`表示训练数据集，`output_file`保存结果词向量。`vocabulary_size`表示训练的词个数。
+
+### 2 中文分词
 
 - CRF实现
 
@@ -15,7 +37,7 @@
 
 参考文献：[Bidirectional LSTM-CRF Models for Sequence Tagging](https://arxiv.org/abs/1508.01991)
 
-### 2 序列化标注
+### 3 序列化标注
 
 - LSTM
 
@@ -56,7 +78,7 @@ cd transwarpnlp/pos
         --method=bilstm
 ```
 
-### 3 中文命名实体识别
+### 4 中文命名实体识别
 
 - LSTM
 
@@ -88,6 +110,7 @@ cd transwarpnlp/ner
         --data_dir=path/to/data_dir \
         --process=train \
         --method=bilstm
+        
 预测：./run --train_dir=path/to/train_dir \ 
         --data_dir=path/to/data_dir \
         --predict_file=path/to/predict_file \
@@ -96,17 +119,17 @@ cd transwarpnlp/ner
         --method=bilstm
 ```
 
-### 4 中文关键词抽取
+### 5 中文关键词抽取
 
 NOT FINISHED
 
-### 5 中文文本自动摘要
+### 6 中文文本自动摘要
 
 - SEQ2SEQ ATTENTION
 
 参考文献：[A Neural Attention Model for Abstractive Sentence Summarization](https://arxiv.org/abs/1509.00685)
 
-### 6 英文情感分析
+### 7 英文情感分析
 
 - MEMORY NETWORK
 
@@ -117,26 +140,26 @@ NOT FINISHED
 
 本任务现在仅仅使用英文语料，后续会基于中文语料进行情感分析。
 
-### 7 依存句法分析
+### 8 依存句法分析
 
 NOT FINISHED
 
-### 8 中文文本分类
+### 9 中文文本分类
 
 - CNN
 
 参考文献：[Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
+
 - LSTM
 
-### 9 中文多标签文本分类
+### 10 中文多标签文本分类
+
 - CNN
 
 参考文献：[Convolutional Neural Networks for Sentence Classification](https://arxiv.org/abs/1408.5882)
+
 - LSTM
 
-### 10 中文Word2Vec训练
-
-NOT FINISHED
 
 ### 11 中文自由写诗
 
