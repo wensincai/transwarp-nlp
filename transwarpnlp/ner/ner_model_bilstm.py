@@ -93,11 +93,11 @@ def _bilstm_model(inputs, targets, config):
     size = config.hidden_size
     target_num = config.target_num # target output number
     
-    lstm_fw_cell = tf.contrib.rnn.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
-    lstm_bw_cell = tf.contrib.rnn.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
+    lstm_fw_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
+    lstm_bw_cell = tf.nn.rnn_cell.BasicLSTMCell(size, forget_bias=0.0, state_is_tuple=True)
         
-    cell_fw = tf.contrib.rnn.MultiRNNCell([lstm_fw_cell] * num_layers, state_is_tuple=True)
-    cell_bw = tf.contrib.rnn.MultiRNNCell([lstm_bw_cell] * num_layers, state_is_tuple=True)
+    cell_fw = tf.nn.rnn_cell.MultiRNNCell([lstm_fw_cell] * num_layers, state_is_tuple=True)
+    cell_bw = tf.nn.rnn_cell.MultiRNNCell([lstm_bw_cell] * num_layers, state_is_tuple=True)
     
     initial_state_fw = cell_fw.zero_state(batch_size, data_type())
     initial_state_bw = cell_bw.zero_state(batch_size, data_type())
@@ -106,7 +106,7 @@ def _bilstm_model(inputs, targets, config):
     inputs_list = [tf.squeeze(s, axis = 1) for s in tf.split(value = inputs, num_or_size_splits = num_steps, axis = 1)]
     
     with tf.variable_scope("ner_bilstm"):
-        outputs, state_fw, state_bw = tf.contrib.rnn.static_bidirectional_rnn(
+        outputs, state_fw, state_bw = tf.nn.static_bidirectional_rnn(
             cell_fw, cell_bw, inputs_list, initial_state_fw = initial_state_fw, 
             initial_state_bw = initial_state_bw)
     
