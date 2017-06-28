@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os, time
-from joint_seg_tagger.config import Config
-from joint_seg_tagger.dataset import data_transform
-from joint_seg_tagger.model import Model
+from transwarpnlp.joint_seg_tagger.config import Config
+from transwarpnlp.joint_seg_tagger.dataset import data_transform
+from transwarpnlp.joint_seg_tagger.model import Model
 import tensorflow as tf
 
 pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))

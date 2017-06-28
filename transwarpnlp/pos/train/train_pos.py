@@ -5,7 +5,7 @@ import os
 
 import tensorflow as tf
 
-from pos.dataset import rawdata, dataset
+from transwarpnlp.pos.dataset import rawdata, dataset
 from transwarpnlp.pos import pos_model
 from transwarpnlp.pos import pos_model_bilstm
 

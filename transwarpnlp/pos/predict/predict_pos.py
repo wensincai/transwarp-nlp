@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import codecs
 
 from transwarpnlp.segment import segmenter
-import pos_tagger
+from transwarpnlp.pos.predict import pos_tagger
 
 def predict(data_dir, train_dir, method, predict_file, output_file):
     tagger = pos_tagger.load_model(data_dir, train_dir, method)

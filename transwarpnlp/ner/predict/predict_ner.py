@@ -4,7 +4,7 @@ from __future__ import unicode_literals # compatible with python3 unicode
 
 import codecs
 from transwarpnlp.segment import segmenter
-import ner_tagger
+from transwarpnlp.ner.predict import ner_tagger
 
 def predict(data_dir, train_dir, method, predict_file, output_file):
     tagger = ner_tagger.load_model(data_dir, train_dir, method)

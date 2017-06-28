@@ -11,9 +11,9 @@ import tensorflow as tf
 import numpy as np
 import glob
 
-from ner import ner_model , ner_model_bilstm
-from ner.dataset import rawdata, dataset
-from ner.config import LargeConfig
+from transwarpnlp.ner import ner_model , ner_model_bilstm
+from transwarpnlp.ner.dataset import rawdata, dataset
+from transwarpnlp.ner.config import LargeConfig
 
 class ModelLoader(object):
     def __init__(self, data_path, ckpt_path, method):

@@ -4,7 +4,7 @@ import os, time
 import codecs
 import cPickle as pickle
 from transwarpnlp.joint_seg_tagger.config import Config
-from joint_seg_tagger.dataset import data_transform
+from transwarpnlp.joint_seg_tagger.dataset import data_transform
 from transwarpnlp.joint_seg_tagger.model import Model
 import tensorflow as tf
 

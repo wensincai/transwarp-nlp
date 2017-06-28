@@ -2,12 +2,12 @@
 
 import tensorflow as tf
 import time
-import losses
 import cPickle as pickle
 import numpy as np
 import random
 
-from joint_seg_tagger.dataset import data_transform
+from transwarpnlp.joint_seg_tagger import losses
+from transwarpnlp.joint_seg_tagger.dataset import data_transform
 from transwarpnlp.joint_seg_tagger.layers import EmbeddingLayer, HiddenLayer, TimeDistributed, BiLSTM, Forward
 import transwarpnlp.joint_seg_tagger.batch as Batch
 

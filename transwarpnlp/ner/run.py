@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 
 import tensorflow as tf
-from ner.train import train_ner
-from ner.predict import predict_ner
+from transwarpnlp.ner.train import train_ner
+from transwarpnlp.ner.predict import predict_ner
 
 r'''
 Example usage:

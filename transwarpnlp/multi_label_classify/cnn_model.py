@@ -2,7 +2,7 @@
 
 import tensorflow as tf
 import numpy as np
-from multi_label_classify.dataset import rawdata
+from transwarpnlp.multi_label_classify.dataset import rawdata
 
 class CNNModel(object):
     def __init__(self, config):

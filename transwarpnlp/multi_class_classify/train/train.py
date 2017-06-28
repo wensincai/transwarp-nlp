@@ -2,10 +2,10 @@
 
 import tensorflow as tf
 import os
-from multi_class_classify.cnn_config import CnnConfig
-from multi_class_classify import cnn_model
-from multi_class_classify.dataset import rawdata
-from multi_class_classify import display
+from transwarpnlp.multi_class_classify.cnn_config import CnnConfig
+from transwarpnlp.multi_class_classify import cnn_model
+from transwarpnlp.multi_class_classify.dataset import rawdata
+from transwarpnlp.multi_class_classify import display
 
 pkg_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 

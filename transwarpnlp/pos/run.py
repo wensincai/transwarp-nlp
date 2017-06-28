@@ -1,8 +1,8 @@
 # -*- coding:utf-8 -*-
 
 import tensorflow as tf
-from pos.train import train_pos
-from pos.predict import predict_pos
+from transwarpnlp.pos.train import train_pos
+from transwarpnlp.pos.predict import predict_pos
 
 r'''
 Example usage:

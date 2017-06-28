@@ -2,7 +2,7 @@
 import random
 import numpy as np
 
-from joint_seg_tagger.dataset import data_transform
+from transwarpnlp.joint_seg_tagger.dataset import data_transform
 
 def train(sess, model, batch_size, config, lr, lrv, data, dr=None, drv=None, verbose=False):
     assert len(data) == len(model)

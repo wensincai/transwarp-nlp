@@ -3,7 +3,7 @@
 import numpy as np
 from collections import defaultdict
 import os, re
-from multi_class_classify.cnn_config import CnnConfig
+from transwarpnlp.multi_class_classify.cnn_config import CnnConfig
 
 config = CnnConfig()
 

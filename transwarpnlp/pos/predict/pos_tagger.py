@@ -11,10 +11,10 @@ import tensorflow as tf
 import numpy as np
 import glob
 
-from pos import pos_model as pos_model
-from pos import pos_model_bilstm
-from pos.config import LargeConfig
-from pos.dataset import rawdata, dataset
+from transwarpnlp.pos import pos_model as pos_model
+from transwarpnlp.pos import pos_model_bilstm
+from transwarpnlp.pos.config import LargeConfig
+from transwarpnlp.pos.dataset import rawdata, dataset
 
 class ModelLoader(object):
     

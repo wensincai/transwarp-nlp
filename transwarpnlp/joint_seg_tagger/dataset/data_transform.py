@@ -6,7 +6,7 @@ import math
 import os
 import re
 import tensorflow as tf
-from joint_seg_tagger.evaluation import score
+from transwarpnlp.joint_seg_tagger.evaluation import score
 
 def get_ngrams(raw, gram):
     gram_set = set()

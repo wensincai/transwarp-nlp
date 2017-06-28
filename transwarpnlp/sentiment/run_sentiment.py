@@ -5,8 +5,8 @@ import tensorflow as tf
 import numpy as np
 import os
 
-from sentiment.reader import read_data
-from sentiment.model import MemN2N
+from transwarpnlp.sentiment.reader import read_data
+from transwarpnlp.sentiment.model import MemN2N
 
 pkg_path = os.path.dirname(os.getcwd())
 train_dir = os.path.join(pkg_path, "data", "sentiment", "ckpt")

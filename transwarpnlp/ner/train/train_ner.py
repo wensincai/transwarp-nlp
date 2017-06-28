@@ -5,9 +5,9 @@ import os
 
 import tensorflow as tf
 
-from ner.dataset import dataset, rawdata
-from ner import ner_model, ner_model_bilstm
-from ner.config import LargeConfig
+from transwarpnlp.ner.dataset import dataset, rawdata
+from transwarpnlp.ner import ner_model, ner_model_bilstm
+from transwarpnlp.ner.config import LargeConfig
 
 def train_lstm(data_dir, train_dir):
     if not data_dir:

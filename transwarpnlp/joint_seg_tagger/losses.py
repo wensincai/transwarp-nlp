@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import tensorflow as tf
-from joint_seg_tagger.layers import Forward
+from transwarpnlp.joint_seg_tagger.layers import Forward
 
 def cross_entropy(y, y_, nums_tags):
     one_hot_y_ = tf.contrib.layers.one_hot_encoding(y_, nums_tags)
